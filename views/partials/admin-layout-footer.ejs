@@ -1,0 +1,48 @@
+</div> <!-- closes wrapper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebarCollapse = document.getElementById('sidebarCollapse');
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const navbar = document.querySelector('.top-navbar');
+
+        if (sidebarCollapse) {
+            sidebarCollapse.addEventListener('click', function () {
+                sidebar.classList.toggle('active');
+                content.classList.toggle('active');
+                
+                // Toggle navbar position for fixed navbar
+                if (navbar) {
+                    navbar.classList.toggle('sidebar-collapsed');
+                }
+            });
+        }
+    });
+</script>
+<script>
+    function updateClock() {
+        const clockElement = document.getElementById('live-clock');
+        if (clockElement) {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            clockElement.textContent = now.toLocaleString('id-ID', options).replace(/\./g, ':');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateClock();
+        setInterval(updateClock, 1000);
+    });
+</script>
+</body>
+</html>

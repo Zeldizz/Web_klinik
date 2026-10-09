@@ -1,0 +1,27 @@
+<!-- Sidebar -->
+<nav id="sidebar">
+    <div class="sidebar-header">
+        <h3>Klinik AL-Furqon</h3>
+    </div>
+
+    <ul class="list-unstyled components">
+        <li class="<%= title.startsWith('Dashboard') ? 'active' : '' %>">
+            <a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </li>
+        <li class="<%= title.includes('Reservasi') ? 'active' : '' %>">
+            <a href="/admin/reservasi"><i class="fas fa-calendar-check"></i> Manajemen Reservasi</a>
+        </li>
+        <li class="<%= title.includes('Pasien') ? 'active' : '' %>">
+            <a href="/admin/pasien"><i class="fas fa-user-injured"></i> Manajemen Pasien</a>
+        </li>
+        <li class="<%= title.includes('Jadwal') ? 'active' : '' %>">
+            <a href="/admin/jadwal"><i class="fas fa-calendar-alt"></i> Kelola Jadwal</a>
+        </li>
+
+        <% if (admin && (admin.role === 'Admin' || admin.role === 'Pimpinan Klinik')) { %>
+        <li class="<%= title.includes('Tenaga Medis') && !title.startsWith('Dashboard') ? 'active' : '' %>">
+            <a href="/admin/tenaga-medis"><i class="fas fa-user-md"></i> Kelola Tenaga Medis</a>
+        </li>
+        <% } %>
+    </ul>
+</nav>

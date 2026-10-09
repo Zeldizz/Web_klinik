@@ -1,0 +1,109 @@
+<%- include('../partials/admin-layout-header') %>
+<%- include('../partials/admin-sidebar') %>
+
+<!-- Page Content -->
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-custom">
+                <h5 class="mb-0">Manajemen Pasien</h5>
+            </div>
+            <div class="card-body">
+                <p>Berikut adalah daftar semua pasien yang terdaftar di sistem Klinik AL-Furqon.</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nama Lengkap</th>
+                                <th>Email</th>
+                                <th>Tanggal Lahir</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (patients.length > 0) { %>
+                                <% patients.forEach((patient, index) => { %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= patient.nama %></td>
+                                        <td><%= patient.email %></td>
+                                        <td><%= new Date(patient.tanggal_lahir).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) %></td>
+                                        <td><%= (patient.jenis_kelamin === 'L' || patient.jenis_kelamin === 'Laki-laki') ? 'Laki-laki' : 'Perempuan' %></td>
+                                        <td>
+                                            <a href="/admin/pasien/profil/<%= patient.id %>" class="btn btn-info btn-sm">
+                                                <i class='bx bx-id-card'></i> Profil
+                                            </a>
+                                            <a href="/admin/pasien/ubah/<%= patient.id %>" class="btn btn-warning btn-sm">
+                                                <i class='bx bx-edit-alt'></i> Ubah
+                                            </a>
+                                            <button type="button" class="btn btn-danger btn-sm delete-patient-btn" data-bs-toggle="modal" data-bs-target="#deletePatientModal" data-patient-id="<%= patient.id %>" data-patient-name="<%= patient.nama %>">
+                                                <i class='bx bx-trash'></i> Hapus
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="text-center">Belum ada pasien yang terdaftar.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePatientModal" tabindex="-1" aria-labelledby="deletePatientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header bg-danger text-white" style="border-top-left-radius: 11px; border-top-right-radius: 11px;">
+                <h5 class="modal-title" id="deletePatientModalLabel"><i class='bx bxs-error-circle me-2'></i>Konfirmasi Penghapusan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda benar-benar yakin ingin menghapus pasien <strong id="patientNameToDelete" class="text-dark"></strong>?</p>
+                <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
+                    <i class='bx bxs-info-circle me-2'></i>
+                    <div>
+                        Tindakan ini bersifat permanen dan <strong>tidak dapat diurungkan</strong>. Semua data rekam medis dan reservasi yang terkait juga akan dihapus.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deletePatientForm" method="POST" action="">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger"><i class='bx bx-trash me-1'></i>Ya, Hapus Pasien</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/admin-layout-footer') %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const deletePatientModal = document.getElementById('deletePatientModal');
+    if (deletePatientModal) {
+        deletePatientModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const patientId = button.getAttribute('data-patient-id');
+            const patientName = button.getAttribute('data-patient-name');
+
+            const modalBodyName = deletePatientModal.querySelector('#patientNameToDelete');
+            const deleteForm = deletePatientModal.querySelector('#deletePatientForm');
+
+            modalBodyName.textContent = patientName;
+            deleteForm.action = `/admin/pasien/hapus/${patientId}?_method=DELETE`;
+        });
+    }
+});
+</script>

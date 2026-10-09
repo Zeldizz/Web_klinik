@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <!-- Bootstrap CSS -->
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Poppins) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Boxicons CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.0/css/boxicons.min.css" />
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- Top Navbar for Pasien -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <div class="d-flex align-items-center">
+                <i class='bx bxs-clinic me-2' style="font-size: 1.5rem;"></i>
+                <span>Klinik AL-Furqon</span>
+            </div>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <% if (admin) { %>
+                    <!-- Logged in as Admin/Doctor -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">Dashboard Admin/Tenaga Medis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/logout">Logout Admin (<%= admin.nama %>)</a>
+                    </li>
+                <% } else if (user) { %>
+                    <!-- Logged in as Patient -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard"><i class="fas fa-home"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reservasi">Reservasi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile/riwayat-pemeriksaan">Riwayat Pemeriksaan</a>
+                    </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="/profile">Profil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    </li>
+                <% } else { %>
+                    <!-- Not logged in -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/login">Login Admin/Tenaga Medis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login Pasien</a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">

@@ -1,0 +1,27 @@
+<nav class="navbar navbar-expand-lg navbar-light top-navbar">
+    <div class="container-fluid">
+        <button type="button" id="sidebarCollapse" class="btn btn-toggle-sidebar">
+            <i class="fas fa-align-left"></i>
+        </button>
+        <div id="live-clock-container" class="d-flex align-items-center me-4">
+            <i class="fas fa-clock me-2"></i>
+            <span id="live-clock"></span>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                <li class="nav-item">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-circle me-1"></i>
+                        <%= admin.nama %>
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/logout" title="Keluar">
+                        <i class="fas fa-sign-out-alt fs-5"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

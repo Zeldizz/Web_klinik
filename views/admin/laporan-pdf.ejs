@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            body { font-size: 11pt; line-height: 1.4; }
+            .container { max-width: none !important; }
+            h1 { font-size: 18pt; }
+            h2 { font-size: 16pt; }
+            h3 { font-size: 14pt; }
+            h4 { font-size: 12pt; }
+            .table { font-size: 10pt; }
+            .btn { display: none !important; }
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000;
+            background-color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        .report-header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .report-title {
+            font-size: 18pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .report-subtitle {
+            font-size: 14pt;
+            margin-bottom: 5px;
+        }
+        
+        .report-meta {
+            font-size: 11pt;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .subsection-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .stat-number {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #333;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 10pt;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11pt;
+        }
+        
+        .table th,
+        .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: bold; }
+        
+        .demographic-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+        
+        .progress-text {
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .report-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .footer-line {
+            border-top: 2px solid #333;
+            margin-bottom: 15px;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+        
+        .signature-box {
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin: 50px 20px 10px 20px;
+        }
+        
+        @media screen {
+            body {
+                background-color: #f5f5f5;
+                padding: 40px;
+            }
+            
+            .container {
+                background-color: white;
+                padding: 40px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                border-radius: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Report Header -->
+        <div class="report-header">
+            <div class="report-title"><%= reportTitle %></div>
+            <div class="report-subtitle"><%= reportPeriod %></div>
+            <div class="report-meta">
+                Dibuat pada: <%= generatedAt %><br>
+                Dibuat oleh: <%= admin.nama %>
+            </div>
+            <button class="no-print" onclick="window.print()" style="position: absolute; top: 20px; right: 20px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Print</button>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="section">
+            <h2 class="section-title">1. RINGKASAN STATISTIK</h2>
+            <table class="data-table">
+                <tr>
+                    <td class="label-col">Total Pasien</td>
+                    <td class="value-col"><%= reportData.summary.total_patients %> orang</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Total Reservasi</td>
+                    <td class="value-col"><%= reportData.summary.total_reservations %> reservasi</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Total Pemeriksaan</td>
+                    <td class="value-col"><%= reportData.summary.total_examinations %> pemeriksaan</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Reservasi Selesai</td>
+                    <td class="value-col"><%= reportData.summary.completed_reservations %> reservasi</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Patient Demographics -->
+        <div class="section">
+            <h2 class="section-title">2. DEMOGRAFI PASIEN</h2>
+            
+            <h3 class="subsection-title">2.1 Distribusi Jenis Kelamin</h3>
+            <table class="data-table">
+                <% if (reportData.patientStats.gender && reportData.patientStats.gender.length > 0) { %>
+                    <% reportData.patientStats.gender.forEach(function(gender) { %>
+                        <tr>
+                            <td class="label-col"><%= gender.jenis_kelamin %></td>
+                            <td class="value-col"><%= gender.count %> orang (<%= gender.percentage %>%)</td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="2" class="text-center">Tidak ada data jenis kelamin</td>
+                    </tr>
+                <% } %>
+            </table>
+            
+            <h3 class="subsection-title">2.2 Distribusi Usia</h3>
+            <table class="data-table">
+                <% if (reportData.patientStats.age && reportData.patientStats.age.length > 0) { %>
+                    <% reportData.patientStats.age.forEach(function(age) { %>
+                        <tr>
+                            <td class="label-col"><%= age.age_group %></td>
+                            <td class="value-col"><%= age.count %> orang (Rata-rata: <%= age.avg_age %> tahun)</td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="2" class="text-center">Tidak ada data usia</td>
+                    </tr>
+                <% } %>
+            </table>
+        </div>
+
+        <!-- Disease and Medicine Statistics -->
+        <div class="section">
+            <h2 class="section-title">3. STATISTIK PENYAKIT DAN OBAT</h2>
+            
+            <h3 class="subsection-title">3.1 Penyakit Tersering (Top 10)</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Diagnosis</th>
+                        <th>Jumlah Kasus</th>
+                        <th>Persentase</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (reportData.diseaseStats && reportData.diseaseStats.length > 0) { %>
+                        <% reportData.diseaseStats.forEach(function(disease, index) { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= disease.diagnosis %></td>
+                                <td><%= disease.count %> kasus</td>
+                                <td><%= disease.percentage %>%</td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="text-center">Tidak ada data diagnosis</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+            
+            <h3 class="subsection-title">3.2 Obat Tersering (Top 10)</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Nama Obat</th>
+                        <th>Jumlah Resep</th>
+                        <th>Persentase</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (reportData.medicineStats && reportData.medicineStats.length > 0) { %>
+                        <% reportData.medicineStats.forEach(function(medicine, index) { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= medicine.medicine_name %></td>
+                                <td><%= medicine.count %> resep</td>
+                                <td><%= medicine.percentage %>%</td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="text-center">Tidak ada data obat</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Monthly Trends -->
+        <% if (reportData.monthlyTrends && reportData.monthlyTrends.length > 0) { %>
+        <div class="section page-break">
+            <h2 class="section-title">4. TREN BULANAN (6 BULAN TERAKHIR)</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Bulan</th>
+                        <th>Pasien Baru</th>
+                        <th>Total Reservasi</th>
+                        <th>Total Pemeriksaan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% reportData.monthlyTrends.forEach(function(trend) { %>
+                        <tr>
+                            <td><%= trend.month_name %></td>
+                            <td><%= trend.new_patients %> pasien</td>
+                            <td><%= trend.total_reservations %> reservasi</td>
+                            <td><%= trend.total_examinations %> pemeriksaan</td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+        <% } %>
+
+        <!-- Report Footer -->
+        <div class="report-footer">
+            <div class="footer-line"></div>
+            <p><strong>LAPORAN INI DIBUAT SECARA OTOMATIS OLEH SISTEM INFORMASI KLINIK</strong></p>
+            <p>Dibuat oleh: <%= admin.nama %> | <%= generatedAt %></p>
+            <p>Klinik Al-Furqon - Sistem Manajemen Kesehatan</p>
+        </div>
+    </div>
+
+    <!-- Auto-print script for print function -->
+    <script>
+        // Check if this page was opened for printing
+        const urlParams = new URLSearchParams(window.location.search);
+        if (document.referrer && document.referrer.includes('/admin/dashboard')) {
+            // Add a small delay to ensure page is fully loaded
+            setTimeout(function() {
+                // Focus the window to ensure print dialog appears
+                window.focus();
+            }, 100);
+        }
+    </script>
+</body>
+</html>

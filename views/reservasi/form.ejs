@@ -1,0 +1,375 @@
+<%- include('../partials/header') %>
+
+<div class="container section-padding-sm">
+    <!-- Header Section -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8 text-center">
+            <div class="mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle" style="width: 80px; height: 80px;">
+                    <i class="fas fa-calendar-plus text-primary" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+            <h1 class="display-6 fw-bold mb-3 text-primary">Buat Reservasi Baru</h1>
+            <p class="lead text-muted">Isi formulir di bawah ini untuk membuat janji temu dengan dokter kami</p>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <% } %>
+            
+            <div class="card card-modern">
+                <div class="card-body p-5">
+                    <form action="/reservasi/baru" method="POST" id="reservationForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="tanggal_reservasi" class="form-label fw-semibold">
+                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                    Pilih Tanggal Reservasi
+                                </label>
+                                <input type="date" class="form-control form-control-lg" id="tanggal_reservasi" name="tanggal_reservasi" required>
+                                <div class="form-text">Pilih tanggal yang sesuai untuk janji temu Anda</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-info-circle text-primary me-2"></i>
+                                    Informasi Jadwal
+                                </label>
+                                <div class="alert alert-info" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Jam Operasional:</strong> Senin - Sabtu: 08:00 - 20:00 | Minggu: Tutup
+                                </div>
+                                <!-- Estimated Arrival Time Info -->
+                                <div id="arrival-time-info" class="alert alert-primary d-none" role="alert">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <strong>Estimasi Jam Kedatangan:</strong> <span id="estimated-time"></span>
+                                    <br><small class="text-muted">Harap datang tepat waktu atau 5-10 menit sebelumnya</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="keluhan" class="form-label fw-semibold">
+                                <i class="fas fa-notes-medical text-primary me-2"></i>
+                                Keluhan Utama
+                            </label>
+                            <textarea class="form-control" id="keluhan" name="keluhan" rows="5" placeholder="Jelaskan keluhan atau gejala yang Anda alami secara detail..." required></textarea>
+                            <div class="form-text">Berikan informasi yang jelas agar dokter dapat mempersiapkan pemeriksaan yang tepat</div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Perhatian:</strong> Reservasi akan dikonfirmasi oleh admin dalam 1x24 jam. Anda akan mendapat notifikasi melalui sistem ini.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/dashboard" class="btn btn-outline-secondary btn-lg me-md-2">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Kembali
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Kirim Reservasi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set the minimum date for the date input to today (using local time)
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayString = `${year}-${month}-${day}`;
+        
+        const dateInput = document.getElementById('tanggal_reservasi');
+        dateInput.setAttribute('min', todayString);
+        
+        // Set max date to 30 days from now (using local time)
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 30);
+        const maxYear = maxDate.getFullYear();
+        const maxMonth = String(maxDate.getMonth() + 1).padStart(2, '0');
+        const maxDay = String(maxDate.getDate()).padStart(2, '0');
+        const maxDateString = `${maxYear}-${maxMonth}-${maxDay}`;
+        dateInput.max = maxDateString;
+        
+        // Operating hours validation
+        const OPERATING_HOURS = {
+            start: 8, // 08:00
+            end: 20   // 20:00
+        };
+        
+        // Function to check if current time is within operating hours
+        function isWithinOperatingHours() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            
+            // Check if today is Sunday
+            if (currentDay === 0) {
+                return false;
+            }
+            
+            // Check if current time is within operating hours
+            return currentHour >= OPERATING_HOURS.start && currentHour < OPERATING_HOURS.end;
+        }
+        
+        // Function to calculate estimated arrival time
+        function calculateEstimatedArrivalTime(selectedDate) {
+            const now = new Date();
+            const selected = new Date(selectedDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            selected.setHours(0, 0, 0, 0);
+            
+            const BUFFER_CONFIG = {
+                SAME_DAY_IMMEDIATE: 30,    // 30 minutes for same-day immediate reservations
+                SAME_DAY_ADVANCE: 60,     // 1 hour for same-day advance reservations
+                FUTURE_DAY: 30,           // 30 minutes for future day reservations
+            };
+            
+            let estimatedTime;
+            
+            // Case 1: Same day reservation
+            if (selected.getTime() === today.getTime()) {
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                
+                // If current time is before operating hours, set arrival to opening time + buffer
+                if (currentHour < OPERATING_HOURS.start) {
+                    estimatedTime = new Date(selected); // Use selected date, not current time
+                    estimatedTime.setHours(OPERATING_HOURS.start, BUFFER_CONFIG.FUTURE_DAY, 0, 0);
+                }
+                // If within operating hours, add buffer
+                else if (currentHour >= OPERATING_HOURS.start && currentHour < OPERATING_HOURS.end) {
+                    estimatedTime = new Date(selected); // Use selected date
+                    estimatedTime.setHours(currentHour, currentMinute, 0, 0); // Set to current time
+                    
+                    // Add buffer based on how much advance notice
+                    const minutesUntilClose = (OPERATING_HOURS.end - currentHour) * 60 - currentMinute;
+                    
+                    if (minutesUntilClose > 120) { // More than 2 hours left
+                        estimatedTime.setMinutes(estimatedTime.getMinutes() + BUFFER_CONFIG.SAME_DAY_ADVANCE);
+                    } else { // Less than 2 hours left - urgent
+                        estimatedTime.setMinutes(estimatedTime.getMinutes() + BUFFER_CONFIG.SAME_DAY_IMMEDIATE);
+                    }
+                }
+                // If current time is after operating hours, move to next day
+                else if (currentHour >= OPERATING_HOURS.end) {
+                    estimatedTime = new Date(selected);
+                    estimatedTime.setDate(estimatedTime.getDate() + 1); // Next day
+                    estimatedTime.setHours(OPERATING_HOURS.start, BUFFER_CONFIG.FUTURE_DAY, 0, 0);
+                }
+            }
+            // Case 2: Future day reservation
+            else {
+                // Set to opening time + standard buffer for future reservations
+                estimatedTime = new Date(selected);
+                estimatedTime.setHours(OPERATING_HOURS.start, BUFFER_CONFIG.FUTURE_DAY, 0, 0);
+            }
+            
+            // Ensure the time doesn't exceed operating hours
+            const maxTime = new Date(estimatedTime);
+            maxTime.setHours(OPERATING_HOURS.end - 1, 30, 0, 0); // 30 minutes before closing
+            
+            if (estimatedTime > maxTime) {
+                estimatedTime = maxTime;
+            }
+            
+            return estimatedTime;
+        }
+        
+        // Function to format time for display
+        function formatTimeForDisplay(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        // Function to validate selected date
+        function validateSelectedDate(selectedDate) {
+            const today = new Date();
+            const selected = new Date(selectedDate);
+            
+            // Reset time to compare dates only
+            today.setHours(0, 0, 0, 0);
+            selected.setHours(0, 0, 0, 0);
+            
+            // Check if selected date is before today (past date)
+            if (selected.getTime() < today.getTime()) {
+                return {
+                    valid: false,
+                    message: 'Tidak dapat memilih tanggal yang sudah berlalu. Silakan pilih tanggal hari ini atau yang akan datang.'
+                };
+            }
+            
+            // Check if selected date is Sunday
+            if (selected.getDay() === 0) {
+                return {
+                    valid: false,
+                    message: 'Maaf, klinik tutup pada hari Minggu. Silakan pilih hari lain.'
+                };
+            }
+            
+            // Check if selected date is today and current time is past operating hours
+            if (selected.getTime() === today.getTime()) {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                
+                if (currentHour >= OPERATING_HOURS.end) {
+                    return {
+                        valid: false,
+                        message: `Maaf, jam operasional klinik telah berakhir untuk hari ini (${OPERATING_HOURS.start}:00 - ${OPERATING_HOURS.end}:00). Silakan pilih tanggal besok atau hari lain.`
+                    };
+                }
+                
+                if (currentHour < OPERATING_HOURS.start) {
+                    return {
+                        valid: true,
+                        message: `Reservasi untuk hari ini dapat dilakukan. Jam operasional: ${OPERATING_HOURS.start}:00 - ${OPERATING_HOURS.end}:00`
+                    };
+                }
+            }
+            
+            return {
+                valid: true,
+                message: `Tanggal valid. Jam operasional: Senin-Sabtu ${OPERATING_HOURS.start}:00 - ${OPERATING_HOURS.end}:00`
+            };
+        }
+        
+        // Add visual feedback element
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.id = 'date-feedback';
+        feedbackDiv.className = 'mt-2';
+        dateInput.parentNode.appendChild(feedbackDiv);
+        
+        // Date input validation
+        dateInput.addEventListener('input', function() {
+            const selectedDate = this.value;
+            const feedbackElement = document.getElementById('date-feedback');
+            const arrivalTimeInfo = document.getElementById('arrival-time-info');
+            const estimatedTimeSpan = document.getElementById('estimated-time');
+            
+            if (selectedDate) {
+                const validation = validateSelectedDate(selectedDate);
+                
+                if (!validation.valid) {
+                    this.value = '';
+                    feedbackElement.innerHTML = `<div class="alert alert-danger alert-sm"><i class="fas fa-exclamation-triangle me-2"></i>${validation.message}</div>`;
+                    arrivalTimeInfo.classList.add('d-none');
+                } else {
+                    feedbackElement.innerHTML = `<div class="alert alert-success alert-sm"><i class="fas fa-check-circle me-2"></i>${validation.message}</div>`;
+                    
+                    // Calculate and display estimated arrival time
+                    const estimatedTime = calculateEstimatedArrivalTime(selectedDate);
+                    const formattedTime = formatTimeForDisplay(estimatedTime);
+                    const selectedDateObj = new Date(selectedDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    selectedDateObj.setHours(0, 0, 0, 0);
+                    
+                    let dayText = '';
+                    if (selectedDateObj.getTime() === today.getTime()) {
+                        dayText = 'hari ini';
+                    } else {
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        if (selectedDateObj.getTime() === tomorrow.getTime()) {
+                            dayText = 'besok';
+                        } else {
+                            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                            dayText = selectedDateObj.toLocaleDateString('id-ID', options);
+                        }
+                    }
+                    
+                    estimatedTimeSpan.innerHTML = `<strong>${formattedTime}</strong> pada ${dayText}`;
+                    arrivalTimeInfo.classList.remove('d-none');
+                }
+            } else {
+                feedbackElement.innerHTML = '';
+                arrivalTimeInfo.classList.add('d-none');
+            }
+        });
+        
+        // Form validation
+        const form = document.getElementById('reservationForm');
+        form.addEventListener('submit', function(e) {
+            const keluhan = document.getElementById('keluhan').value.trim();
+            const selectedDate = dateInput.value;
+            
+            // Validate complaint length
+            if (keluhan.length < 10) {
+                e.preventDefault();
+                alert('Mohon jelaskan keluhan Anda minimal 10 karakter untuk membantu dokter memahami kondisi Anda.');
+                return false;
+            }
+            
+            // Validate selected date
+            if (selectedDate) {
+                const validation = validateSelectedDate(selectedDate);
+                if (!validation.valid) {
+                    e.preventDefault();
+                    alert(validation.message);
+                    return false;
+                }
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Mengirim...';
+            submitBtn.disabled = true;
+            
+            // Re-enable button after 3 seconds in case of error
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+        
+        // Show current operating status
+        const operatingStatus = document.createElement('div');
+        operatingStatus.className = 'alert mt-2';
+        
+        if (isWithinOperatingHours()) {
+            operatingStatus.className += ' alert-success';
+            operatingStatus.innerHTML = '<i class="fas fa-clock me-2"></i><strong>Klinik sedang buka</strong> - Anda dapat membuat reservasi untuk hari ini atau hari lain.';
+        } else {
+            const now = new Date();
+            const currentDay = now.getDay();
+            const currentHour = now.getHours();
+            
+            if (currentDay === 0) {
+                operatingStatus.className += ' alert-warning';
+                operatingStatus.innerHTML = '<i class="fas fa-moon me-2"></i><strong>Klinik tutup</strong> - Hari Minggu. Buka kembali Senin jam 08:00.';
+            } else if (currentHour < OPERATING_HOURS.start) {
+                operatingStatus.className += ' alert-info';
+                operatingStatus.innerHTML = `<i class="fas fa-clock me-2"></i><strong>Klinik belum buka</strong> - Buka jam ${OPERATING_HOURS.start}:00 - ${OPERATING_HOURS.end}:00.`;
+            } else {
+                operatingStatus.className += ' alert-warning';
+                operatingStatus.innerHTML = `<i class="fas fa-moon me-2"></i><strong>Klinik sudah tutup</strong> - Buka kembali besok jam ${OPERATING_HOURS.start}:00.`;
+            }
+        }
+        
+        // Insert operating status after the operating hours info
+        const operatingHoursAlert = document.querySelector('.alert-info');
+        operatingHoursAlert.parentNode.insertBefore(operatingStatus, operatingHoursAlert.nextSibling);
+    });
+</script>
+
+<%- include('../partials/footer') %>

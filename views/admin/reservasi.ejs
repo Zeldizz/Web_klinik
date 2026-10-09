@@ -1,0 +1,119 @@
+<%- include('../partials/admin-layout-header') %>
+<%- include('../partials/admin-sidebar') %>
+
+<!-- Page Content -->
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Manajemen Reservasi</h5>
+            </div>
+            <div class="card-body">
+                <form action="/admin/reservasi" method="GET" class="row g-3 align-items-center mb-4 border-bottom pb-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Cari Pasien</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" name="search" id="search" class="form-control" placeholder="Ketik nama pasien..." value="<%= typeof search !== 'undefined' ? search : '' %>">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Filter Status</label>
+                        <select name="status" id="statusFilter" class="form-select">
+                            <option value="">Semua Status</option>
+                            <option value="Menunggu" <%= (typeof status !== 'undefined' && status === 'Menunggu') ? 'selected' : '' %>>Menunggu</option>
+                            <option value="Dikonfirmasi" <%= (typeof status !== 'undefined' && status === 'Dikonfirmasi') ? 'selected' : '' %>>Dikonfirmasi</option>
+                            <option value="Selesai" <%= (typeof status !== 'undefined' && status === 'Selesai') ? 'selected' : '' %>>Selesai</option>
+                            <option value="Dibatalkan" <%= (typeof status !== 'undefined' && status === 'Dibatalkan') ? 'selected' : '' %>>Dibatalkan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dateFilter" class="form-label">Filter Tanggal</label>
+                        <input type="date" name="tanggal" id="dateFilter" class="form-control" value="<%= typeof tanggal !== 'undefined' ? tanggal : '' %>">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+
+                <% if (reservations.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Sesi</th>
+                                    <th>Pasien</th>
+                                    <th>Dokter</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% reservations.forEach(reservasi => { %>
+                                    <tr>
+                                        <td><%= new Date(reservasi.tanggal_reservasi).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) %></td>
+                                        <td><%= reservasi.sesi %></td>
+                                        <td><%= reservasi.nama_pasien %></td>
+                                        <td><%= reservasi.nama_dokter %></td>
+                                        <td>
+                                            <% if (reservasi.status === 'Selesai') { %>
+                                                <span class="badge bg-success"><%= reservasi.status %></span>
+                                            <% } else if (reservasi.status === 'Dibatalkan') { %>
+                                                <span class="badge bg-danger"><%= reservasi.status %></span>
+                                            <% } else if (reservasi.status === 'Dikonfirmasi') { %>
+                                                <span class="badge bg-primary"><%= reservasi.status %></span>
+                                            <% } else { %>
+                                                <span class="badge bg-warning text-dark"><%= reservasi.status %></span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <!-- Tombol lihat/ubah rekam medis -->
+                                                <% if (reservasi.rekam_medis_id) { %>
+                                                    <a href="/admin/rekam-medis/detail/<%= reservasi.rekam_medis_id %>" class="btn btn-sm btn-info btn-action"><i class="fas fa-eye me-1"></i> Lihat</a>
+                                                    <% if (admin.role === 'Admin' || admin.role === 'Tenaga Medis') { %>
+                                                        <a href="/admin/rekam-medis/ubah/<%= reservasi.rekam_medis_id %>" class="btn btn-sm btn-warning btn-action"><i class="fas fa-edit me-1"></i> Ubah</a>
+                                                    <% } %>
+                                                <% } else if (reservasi.status === 'Dikonfirmasi' && (admin.role === 'Admin' || admin.role === 'Tenaga Medis')) { %>
+                                                    <a href="/admin/rekam-medis/tambah/<%= reservasi.id %>" class="btn btn-sm btn-primary btn-action">Input Rekam Medis</a>
+                                                <% } %>
+
+                                                <!-- Tombol konfirmasi/tolak -->
+                                                <% if (reservasi.status === 'Menunggu' && (admin.role === 'Admin' || admin.role === 'Pimpinan Klinik')) { %>
+                                                    <a href="/admin/reservasi/atur-jadwal/<%= reservasi.id %>" class="btn btn-sm btn-success btn-action"><i class="fas fa-calendar-alt me-1"></i> Atur Jadwal</a>
+                                                    <form action="/admin/reservasi/update-status/<%= reservasi.id %>" method="POST" class="d-inline">
+                                                        <input type="hidden" name="status" value="Dibatalkan">
+                                                        <button type="submit" class="btn btn-sm btn-danger btn-action" onsubmit="return confirm('Anda yakin ingin menolak reservasi ini?');"><i class="fas fa-times me-1"></i> Tolak</button>
+                                                    </form>
+                                                <% } %>
+
+                                                <!-- Tombol Hapus (Hanya untuk Admin) -->
+                                                <% if (admin.role === 'Admin') { %>
+                                                <form action="/admin/reservasi/hapus/<%= reservasi.id %>" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus reservasi ini secara permanen? Tindakan ini tidak dapat dibatalkan.');">
+                                                    <button type="submit" class="btn btn-sm btn-danger btn-action">
+                                                        <i class="fas fa-trash-alt me-1"></i> Hapus
+                                                    </button>
+                                                </form>
+                                                <% } %>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-info text-center">
+                        <h5 class="alert-heading">Data Tidak Ditemukan</h5>
+                        <p class="mb-0">Tidak ada reservasi yang cocok dengan kriteria pencarian atau filter Anda.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/admin-layout-footer') %>

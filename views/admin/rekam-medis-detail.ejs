@@ -1,0 +1,140 @@
+<%- include('../partials/admin-layout-header') %>
+<%- include('../partials/admin-sidebar') %>
+
+<!-- Page Content -->
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Detail Rekam Medis</h5>
+                <a href="/admin/reservasi" class="btn btn-sm btn-secondary text-white">Kembali ke Reservasi</a>
+            </div>
+            <div class="card-body">
+                <% 
+                    const calculateAge = (birthdate) => {
+                        if (!birthdate) return '-';
+                        const birthDate = new Date(birthdate);
+                        const today = new Date();
+                        let age = today.getFullYear() - birthDate.getFullYear();
+                        const m = today.getMonth() - birthDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                        }
+                        return age;
+                    };
+                %>
+
+                <!-- Patient & Reservation Info -->
+                <div class="p-3 mb-4 rounded" style="background-color: #f0f8ff;">
+                    <h6 class="border-bottom pb-2 mb-3"><strong><i class="fas fa-user-injured me-2"></i>Informasi Pasien & Pemeriksaan</strong></h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Tgl. Reservasi</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.tanggal_reservasi ? new Date(rekamMedis.tanggal_reservasi).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-' %></dd>
+                                
+                                <dt class="col-sm-5">ID Reservasi</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.reservasi_id %></dd>
+
+                                <dt class="col-sm-5">NIK</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.nik || '-' %></dd>
+
+                                <dt class="col-sm-5">Nama Pasien</dt>
+                                <dd class="col-sm-7">: <strong><%= rekamMedis.nama_pasien %></strong></dd>
+
+                                <dt class="col-sm-5">Keluhan Utama</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.keluhan || '-' %></dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Tgl. Lahir / Usia</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.tanggal_lahir ? `${new Date(rekamMedis.tanggal_lahir).toLocaleDateString('id-ID')} (${calculateAge(rekamMedis.tanggal_lahir)} thn)` : '-' %></dd>
+
+                                <dt class="col-sm-5">Tanggal Periksa</dt>
+                                <dd class="col-sm-7">: <%= new Date(rekamMedis.tanggal_pemeriksaan).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }) %></dd>
+
+                                <dt class="col-sm-5">Ditangani Oleh</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.nama_dokter %></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vital Signs -->
+                <h6 class="mt-4">Pemeriksaan Tanda Vital (Keadaan Umum)</h6>
+                <div class="p-3 bg-light rounded mb-4">
+                    <div class="row">
+                        <div class="col-md-4"><dl class="row"><dt class="col-6">Nadi</dt><dd class="col-6">: <%= rekamMedis.nadi || '-' %> x/menit</dd></dl></div>
+                        <div class="col-md-4"><dl class="row"><dt class="col-6">Suhu</dt><dd class="col-6">: <%= rekamMedis.suhu || '-' %> °C</dd></dl></div>
+                        <div class="col-md-4"><dl class="row"><dt class="col-6">Pernafasan</dt><dd class="col-6">: <%= rekamMedis.pernafasan || '-' %> x/menit</dd></dl></div>
+                        <div class="col-md-4"><dl class="row"><dt class="col-6">Tekanan Darah</dt><dd class="col-6">: <%= rekamMedis.tekanan_darah || '-' %> mmHg</dd></dl></div>
+                        <div class="col-md-4"><dl class="row"><dt class="col-6">Tinggi Badan</dt><dd class="col-6">: <%= rekamMedis.tinggi_badan || '-' %> cm</dd></dl></div>
+                        <div class="col-md-4"><dl class="row"><dt class="col-6">Berat Badan</dt><dd class="col-6">: <%= rekamMedis.berat_badan || '-' %> kg</dd></dl></div>
+                    </div>
+                </div>
+
+                <!-- Examination Results -->
+                <h6>Hasil Pemeriksaan</h6>
+                <div class="p-3 bg-light rounded mb-4">
+                    <dl class="mb-0">
+                        <dt>Diagnosis</dt>
+                        <dd><pre class="pre-wrap"><%= rekamMedis.diagnosis %></pre></dd>
+                        <hr>
+                        <dt>Tindakan</dt>
+                        <dd><pre class="pre-wrap"><%= rekamMedis.tindakan %></pre></dd>
+                        <hr>
+                        <dt>Resep Obat</dt>
+                        <dd>
+                            <% if (rekamMedis.resep_obat && rekamMedis.resep_obat.trim() !== '') { %>
+                                <div class="resep-container p-3 rounded" style="background-color: #f8f9fa; border: 1px solid #dee2e6;">
+                                    <% 
+                                    const resepList = rekamMedis.resep_obat.split(';').map(item => item.trim()).filter(item => item);
+                                    resepList.forEach((resep, index) => {
+                                        const parts = resep.split('-').map(part => part.trim());
+                                        const namaObat = parts[0] || 'Tidak ada nama obat';
+                                        const aturanMinum = parts[1] || 'Tidak ada aturan';
+                                        const waktuKonsumsi = parts[2] || 'Tidak ada waktu';
+                                    %>
+                                        <div class="resep-item mb-3 pb-3 <%= index < resepList.length - 1 ? 'border-bottom' : '' %>">
+                                            <p class="fw-bold mb-1"><i class="fas fa-pills text-primary me-2"></i><%= namaObat %></p>
+                                            <ul class="list-unstyled mb-0 ps-4">
+                                                <li>
+                                                    <span class="text-muted">Aturan:</span>
+                                                    <strong><%= aturanMinum %></strong>
+                                                </li>
+                                                <li>
+                                                    <span class="text-muted">Waktu:</span>
+                                                    <strong><%= waktuKonsumsi %></strong>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                            <% } else { %>
+                                <span class="text-muted">Tidak ada resep obat.</span>
+                            <% } %>
+                        </dd>
+                        <% if (rekamMedis.catatan_tambahan && rekamMedis.catatan_tambahan.trim() !== '') { %>
+                        <hr>
+                        <dt>Catatan Tambahan</dt>
+                        <dd><pre class="pre-wrap"><%= rekamMedis.catatan_tambahan %></pre></dd>
+                        <% } %>
+                    </dl>
+                </div>
+
+                <% if (admin.role === 'Admin' || admin.role === 'Tenaga Medis') { %>
+                <div class="d-flex justify-content-end">
+                    <a href="/admin/rekam-medis/ubah/<%= rekamMedis.id %>" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i> Ubah Rekam Medis
+                    </a>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/admin-layout-footer') %>

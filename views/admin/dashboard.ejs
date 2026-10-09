@@ -1,0 +1,1134 @@
+<%- include('../partials/admin-layout-header') %>
+
+<style>
+/* Custom styling for pie chart legend strikethrough effect */
+.chart-legend-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.chart-legend-item.hidden {
+    text-decoration: line-through !important;
+    opacity: 0.5 !important;
+    color: #9ca3af !important;
+}
+
+.chart-legend-item:hover {
+    opacity: 0.8;
+}
+
+/* Chart.js legend styling override */
+.chartjs-legend ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chartjs-legend li {
+    display: inline-block;
+    margin: 8px 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.chartjs-legend li:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced Export and Print Buttons */
+.btn-export-pdf {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+.btn-export-pdf:hover {
+    background: linear-gradient(135deg, #218838, #1ea080) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4) !important;
+}
+
+.btn-print-report {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+.btn-print-report:hover {
+    background: linear-gradient(135deg, #0069d9, #004085) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4) !important;
+}
+
+/* Monthly Report Filter Styling */
+#reportMonth {
+    background-color: #ffffff !important;
+    border: 2px solid #e9ecef !important;
+    color: #495057 !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+#reportMonth:focus {
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25) !important;
+    background-color: #ffffff !important;
+    color: #495057 !important;
+}
+
+#reportMonth option {
+    background-color: #ffffff !important;
+    color: #495057 !important;
+    padding: 8px 12px !important;
+    font-weight: 500 !important;
+}
+
+#reportMonth option:hover {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+#reportMonth option:checked {
+    background-color: #4CAF50 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Filter label styling */
+#monthlyReportFilter .form-label {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+}
+</style>
+
+<%- include('../partials/admin-sidebar') %>
+
+<!-- Page Content -->
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <div class="row">
+            <!-- Main Content Area (Left Column) -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Statistik Reservasi & Pendapatan</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filter Form -->
+                        <form id="filterForm" action="/admin/dashboard" method="GET" class="row g-3 align-items-end mb-4 border-bottom pb-3">
+                            <!-- Main Filter -->
+                            <div class="col-md-4">
+                                <label for="range" class="form-label">Rentang Waktu</label>
+                                <select name="range" id="range" class="form-select">
+                                    <option value="last7days" <%= locals.filters.range === 'last7days' ? 'selected' : '' %>>7 Hari Terakhir</option>
+                                    <option value="thisMonth" <%= locals.filters.range === 'thisMonth' ? 'selected' : '' %>>Bulan Ini</option>
+                                    <option value="last12months" <%= locals.filters.range === 'last12months' ? 'selected' : '' %>>12 Bulan Terakhir</option>
+                                    <option value="thisYear" <%= locals.filters.range === 'thisYear' ? 'selected' : '' %>>Tahun Ini</option>
+                                    <option value="specificMonth" <%= locals.filters.range === 'specificMonth' ? 'selected' : '' %>>Bulan Spesifik</option>
+                                    <option value="dateRange" <%= locals.filters.range === 'dateRange' ? 'selected' : '' %>>Rentang Tanggal</option>
+                                </select>
+                            </div>
+
+                            <!-- Gender Filter -->
+                            <div class="col-md-3">
+                                <label for="gender" class="form-label">Jenis Kelamin</label>
+                                <select name="gender" id="gender" class="form-select">
+                                    <option value="" <%= !locals.filters.gender ? 'selected' : '' %>>Semua</option>
+                                    <option value="Laki-laki" <%= locals.filters.gender === 'Laki-laki' ? 'selected' : '' %>>Laki-laki</option>
+                                    <option value="Perempuan" <%= locals.filters.gender === 'Perempuan' ? 'selected' : '' %>>Perempuan</option>
+                                </select>
+                            </div>
+
+                            <!-- Specific Month Filter (Hidden by default) -->
+                            <div class="col-md-5" id="specific-month-filter" style="display: none;">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label for="month" class="form-label">Bulan</label>
+                                        <select name="month" id="month" class="form-select">
+                                            <% const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']; %>
+                                            <% for (let i = 0; i < months.length; i++) { %>
+                                                <option value="<%= i + 1 %>" <%= locals.filters.month == (i + 1) ? 'selected' : '' %>><%= months[i] %></option>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="year" class="form-label">Tahun</label>
+                                        <input type="number" name="year" id="year" class="form-control" value="<%= locals.filters.year || new Date().getFullYear() %>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Date Range Filter (Hidden by default) -->
+                            <div class="col-md-6" id="date-range-filter" style="display: none;">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label for="startDate" class="form-label">Dari</label>
+                                        <input type="date" name="startDate" id="startDate" class="form-control" value="<%= locals.filters.startDate || '' %>">
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="endDate" class="form-label">Sampai</label>
+                                        <input type="date" name="endDate" id="endDate" class="form-control" value="<%= locals.filters.endDate || '' %>">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Data container -->
+                        <div id="chart-data-container" 
+                             data-labels='<%- JSON.stringify(locals.chartData.labels || []) %>'
+                             data-reservations='<%- JSON.stringify(locals.chartData.reservations || []) %>'
+                             data-new-patients='<%- JSON.stringify(locals.chartData.newPatients || []) %>'>
+                        </div>
+
+                        <!-- Bar Chart for Reservations -->
+                        <h6 class="text-muted mb-2 fw-bold">Total Reservasi</h6>
+                        <div class="chart-container mb-4" style="position: relative; height:220px">
+                            <canvas id="reservationsChart"></canvas>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Line Chart for New Patients -->
+                        <h6 class="text-muted mb-2 fw-bold">Pendaftaran Pasien Baru</h6>
+                        <div class="chart-container" style="position: relative; height:220px">
+                            <canvas id="newPatientsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Area (Right Column) -->
+            <div class="col-lg-4">
+                <!-- Stat Cards -->
+                <div class="card text-white bg-primary shadow-sm mb-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Pasien</h5>
+                            <p class="card-text fs-2 fw-bold"><%= locals.totalPasien || 0 %></p>
+                        </div>
+                        <i class="fas fa-users fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card text-white bg-success shadow-sm mb-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Tenaga Medis</h5>
+                            <p class="card-text fs-2 fw-bold"><%= locals.totalTenagaMedis || 0 %></p>
+                        </div>
+                        <i class="fas fa-user-md fa-3x"></i>
+                    </div>
+                </div>
+                <!-- Doughnut Chart -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Proporsi Status Reservasi</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="donutChart" height="300" 
+                                data-labels='<%- JSON.stringify(locals.donutLabels) %>' 
+                                data-values='<%- JSON.stringify(locals.donutData) %>'
+                                data-colors='<%- JSON.stringify(locals.donutColors) %>'>
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Report Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                                    Laporan Bulanan Komprehensif
+                                </h5>
+                                <% 
+                                    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                                                      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    const currentMonth = monthNames[locals.monthlyReportFilters.month - 1];
+                                    const currentYear = locals.monthlyReportFilters.year;
+                                %>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    <%= currentMonth %> <%= currentYear %>
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <form id="monthlyReportFilter" class="d-flex align-items-center gap-2">
+                                    <label for="reportMonth" class="form-label mb-0 text-nowrap">Filter:</label>
+                                    <select name="reportMonth" id="reportMonth" class="form-select form-select-sm" style="min-width: 150px;">
+                                        <option value="current">Bulan Ini</option>
+                                        <option value="previous">Bulan Lalu</option>
+                                        <!-- Dynamic month options will be added by JavaScript -->
+                                    </select>
+                                </form>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-export-pdf" onclick="exportToPDF()">
+                                        <i class="fas fa-file-pdf me-1"></i>
+                                        Export PDF
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-print-report" onclick="printReport()">
+                                        <i class="fas fa-print me-1"></i>
+                                        Print
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card bg-gradient-primary text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-users fa-2x mb-2"></i>
+                                        <h4 class="mb-1"><%= locals.monthlyReport.summary.total_patients || 0 %></h4>
+                                        <small>Total Pasien</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-gradient-info text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                                        <h4 class="mb-1"><%= locals.monthlyReport.summary.total_reservations || 0 %></h4>
+                                        <small>Total Reservasi</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-gradient-success text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-stethoscope fa-2x mb-2"></i>
+                                        <h4 class="mb-1"><%= locals.monthlyReport.summary.total_examinations || 0 %></h4>
+                                        <small>Total Pemeriksaan</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-gradient-warning text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                        <h4 class="mb-1"><%= locals.monthlyReport.summary.completed_reservations || 0 %></h4>
+                                        <small>Reservasi Selesai</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Statistics -->
+                        <div class="row">
+                            <!-- Gender Distribution -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-venus-mars me-2 text-info"></i>
+                                            Distribusi Jenis Kelamin
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <% if (locals.monthlyReport.patientStats.gender && locals.monthlyReport.patientStats.gender.length > 0) { %>
+                                            <% locals.monthlyReport.patientStats.gender.forEach(function(gender) { %>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span>
+                                                        <i class="fas <%= gender.jenis_kelamin === 'Laki-laki' ? 'fa-mars text-primary' : 'fa-venus text-danger' %> me-2"></i>
+                                                        <%= gender.jenis_kelamin %>
+                                                    </span>
+                                                    <span class="badge bg-light text-dark">
+                                                        <%= gender.count %> (<%= gender.percentage %>%)
+                                                    </span>
+                                                </div>
+                                                <div class="progress mb-3" style="height: 8px;">
+                                                    <div class="progress-bar <%= gender.jenis_kelamin === 'Laki-laki' ? 'bg-primary' : 'bg-danger' %>" 
+                                                         data-width="<%= gender.percentage || 0 %>" style="width: 0%;"></div>
+                                                </div>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <p class="text-muted text-center">Tidak ada data jenis kelamin</p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Age Distribution -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-birthday-cake me-2 text-warning"></i>
+                                            Distribusi Usia
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <% if (locals.monthlyReport.patientStats.age && locals.monthlyReport.patientStats.age.length > 0) { %>
+                                            <% locals.monthlyReport.patientStats.age.forEach(function(age, index) { %>
+                                                <% const colors = ['primary', 'success', 'info', 'warning', 'danger']; %>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span>
+                                                        <i class="fas fa-user me-2 text-<%= colors[index % colors.length] %>"></i>
+                                                        <%= age.age_group %>
+                                                    </span>
+                                                    <span class="badge bg-light text-dark">
+                                                        <%= age.count %> (Rata-rata: <%= age.avg_age %> tahun)
+                                                    </span>
+                                                </div>
+                                                <div class="progress mb-3" style="height: 8px;">
+                                                    <div class="progress-bar bg-<%= colors[index % colors.length] %>" 
+                                                         data-width="<%= Math.max((age.count / (locals.monthlyReport.patientStats.age.reduce((sum, a) => sum + a.count, 0) || 1)) * 100, 5) %>" style="width: 0%;"></div>
+                                                </div>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <p class="text-muted text-center">Tidak ada data usia</p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Disease and Medicine Statistics -->
+                        <div class="row">
+                            <!-- Top Diseases -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-virus me-2 text-danger"></i>
+                                            Penyakit Tersering (Top 10)
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <% if (locals.monthlyReport.diseaseStats && locals.monthlyReport.diseaseStats.length > 0) { %>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Rank</th>
+                                                            <th>Diagnosis</th>
+                                                            <th>Jumlah</th>
+                                                            <th>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% locals.monthlyReport.diseaseStats.forEach(function(disease, index) { %>
+                                                            <tr>
+                                                                <td><span class="badge bg-primary">#<%= index + 1 %></span></td>
+                                                                <td><%= disease.diagnosis %></td>
+                                                                <td><%= disease.count %></td>
+                                                                <td><%= disease.percentage %>%</td>
+                                                            </tr>
+                                                        <% }); %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <% } else { %>
+                                            <p class="text-muted text-center">Tidak ada data diagnosis</p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Top Medicines -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-pills me-2 text-success"></i>
+                                            Obat Tersering (Top 10)
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <% if (locals.monthlyReport.medicineStats && locals.monthlyReport.medicineStats.length > 0) { %>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Rank</th>
+                                                            <th>Nama Obat</th>
+                                                            <th>Jumlah</th>
+                                                            <th>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% locals.monthlyReport.medicineStats.forEach(function(medicine, index) { %>
+                                                            <tr>
+                                                                <td><span class="badge bg-success">#<%= index + 1 %></span></td>
+                                                                <td><%= medicine.medicine_name %></td>
+                                                                <td><%= medicine.count %></td>
+                                                                <td><%= medicine.percentage %>%</td>
+                                                            </tr>
+                                                        <% }); %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <% } else { %>
+                                            <p class="text-muted text-center">Tidak ada data obat</p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Trends -->
+                        <% if (locals.monthlyReport.monthlyTrends && locals.monthlyReport.monthlyTrends.length > 0) { %>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-chart-area me-2 text-info"></i>
+                                            Tren 6 Bulan Terakhir
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Bulan</th>
+                                                        <th>Pasien Baru</th>
+                                                        <th>Total Reservasi</th>
+                                                        <th>Total Pemeriksaan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <% locals.monthlyReport.monthlyTrends.forEach(function(trend) { %>
+                                                        <tr>
+                                                            <td><strong><%= trend.month_name %></strong></td>
+                                                            <td><span class="badge bg-primary"><%= trend.new_patients %></span></td>
+                                                            <td><span class="badge bg-info"><%= trend.total_reservations %></span></td>
+                                                            <td><span class="badge bg-success"><%= trend.total_examinations %></span></td>
+                                                        </tr>
+                                                    <% }); %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // New dynamic filter logic
+    const rangeSelect = document.getElementById('range');
+    const specificMonthFilter = document.getElementById('specific-month-filter');
+    const dateRangeFilter = document.getElementById('date-range-filter');
+
+    function toggleDynamicFilters() {
+        const selectedRange = rangeSelect.value;
+        specificMonthFilter.style.display = selectedRange === 'specificMonth' ? 'block' : 'none';
+        dateRangeFilter.style.display = selectedRange === 'dateRange' ? 'block' : 'none';
+    }
+
+    rangeSelect.addEventListener('change', toggleDynamicFilters);
+    toggleDynamicFilters(); // Run on page load to set initial state
+
+    // --- New Separated Charts Logic ---
+    const dataContainer = document.getElementById('chart-data-container');
+    if (dataContainer) {
+        const labels = JSON.parse(dataContainer.getAttribute('data-labels'));
+        const reservationsData = JSON.parse(dataContainer.getAttribute('data-reservations'));
+        const newPatientsData = JSON.parse(dataContainer.getAttribute('data-new-patients'));
+
+        // 1. Bar Chart for Reservations
+        const reservationsCanvas = document.getElementById('reservationsChart');
+        if (reservationsCanvas) {
+            const reservationsCtx = reservationsCanvas.getContext('2d');
+            new Chart(reservationsCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Reservasi',
+                        data: reservationsData,
+                        backgroundColor: 'rgba(13, 110, 253, 0.08)',
+                        borderColor: '#0d6efd',
+                        borderWidth: 2,
+                        borderRadius: {
+                            topLeft: 8,
+                            topRight: 8,
+                            bottomLeft: 0,
+                            bottomRight: 0
+                        },
+                        borderSkipped: false,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1f2937',
+                            bodyColor: '#374151',
+                            borderColor: 'rgba(0, 0, 0, 0.08)',
+                            borderWidth: 1,
+                            cornerRadius: 12,
+                            padding: 16,
+                            displayColors: false,
+                            titleFont: {
+                                size: 13,
+                                weight: '600',
+                                family: 'Inter, system-ui, sans-serif'
+                            },
+                            bodyFont: {
+                                size: 12,
+                                weight: '500',
+                                family: 'Inter, system-ui, sans-serif'
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    return `${context.parsed.y} reservasi`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            border: { display: false },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.04)',
+                                lineWidth: 1,
+                                drawTicks: false
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                padding: 12,
+                                font: {
+                                    size: 11,
+                                    weight: '500',
+                                    family: 'Inter, system-ui, sans-serif'
+                                },
+                                color: '#6b7280'
+                            }
+                        },
+                        x: {
+                            border: { display: false },
+                            grid: { display: false },
+                            ticks: {
+                                padding: 8,
+                                font: {
+                                    size: 11,
+                                    weight: '500',
+                                    family: 'Inter, system-ui, sans-serif'
+                                },
+                                color: '#6b7280',
+                                maxRotation: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Line Chart for New Patients
+        const newPatientsCanvas = document.getElementById('newPatientsChart');
+        if (newPatientsCanvas) {
+            const newPatientsCtx = newPatientsCanvas.getContext('2d');
+            const gradient = newPatientsCtx.createLinearGradient(0, 0, 0, 220);
+            gradient.addColorStop(0, 'rgba(13, 202, 240, 0.4)');
+            gradient.addColorStop(1, 'rgba(13, 202, 240, 0)');
+
+            new Chart(newPatientsCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pasien Baru',
+                        data: newPatientsData,
+                        backgroundColor: 'rgba(25, 135, 84, 0.06)',
+                        borderColor: '#198754',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#198754',
+                        pointBorderWidth: 3,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#ffffff',
+                        pointHoverBorderColor: '#198754',
+                        pointHoverBorderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1f2937',
+                            bodyColor: '#374151',
+                            borderColor: 'rgba(0, 0, 0, 0.08)',
+                            borderWidth: 1,
+                            cornerRadius: 12,
+                            padding: 16,
+                            displayColors: false,
+                            titleFont: {
+                                size: 13,
+                                weight: '600',
+                                family: 'Inter, system-ui, sans-serif'
+                            },
+                            bodyFont: {
+                                size: 12,
+                                weight: '500',
+                                family: 'Inter, system-ui, sans-serif'
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    return `${context.parsed.y} pasien baru`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            border: { display: false },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.04)',
+                                lineWidth: 1,
+                                drawTicks: false
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                padding: 12,
+                                font: {
+                                    size: 11,
+                                    weight: '500',
+                                    family: 'Inter, system-ui, sans-serif'
+                                },
+                                color: '#6b7280'
+                            }
+                        },
+                        x: {
+                            border: { display: false },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.04)',
+                                lineWidth: 1,
+                                drawTicks: false
+                            },
+                            ticks: {
+                                padding: 8,
+                                font: {
+                                    size: 11,
+                                    weight: '500',
+                                    family: 'Inter, system-ui, sans-serif'
+                                },
+                                color: '#6b7280',
+                                maxRotation: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Donut Chart
+    const donutCanvas = document.getElementById('donutChart');
+    if (donutCanvas) {
+        const donutCtx = donutCanvas.getContext('2d');
+        const donutLabels = JSON.parse(donutCanvas.getAttribute('data-labels'));
+        const donutData = JSON.parse(donutCanvas.getAttribute('data-values'));
+        const donutColors = JSON.parse(donutCanvas.getAttribute('data-colors'));
+        
+        new Chart(donutCtx, {
+            type: 'pie',
+            data: {
+                labels: donutLabels,
+                datasets: [{
+                    label: 'Status Reservasi',
+                    data: donutData,
+                    backgroundColor: donutColors,
+                    borderColor: '#ffffff',
+                    borderWidth: 4,
+                    hoverOffset: 8,
+                    hoverBorderWidth: 6,
+                    hoverBorderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    animateRotate: true,
+                    animateScale: false,
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'nearest'
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        align: 'center',
+                        onClick: function(e, legendItem, legend) {
+                            const index = legendItem.index;
+                            const chart = legend.chart;
+                            const meta = chart.getDatasetMeta(0);
+                            
+                            // Toggle visibility
+                            meta.data[index].hidden = !meta.data[index].hidden;
+                            
+                            // Update chart
+                            chart.update();
+                            
+                            // Apply strikethrough effect to legend text
+                            setTimeout(() => {
+                                const legendContainer = chart.canvas.parentNode.querySelector('.chartjs-legend');
+                                if (legendContainer) {
+                                    const legendItems = legendContainer.querySelectorAll('li');
+                                    if (legendItems[index]) {
+                                        const legendItem = legendItems[index];
+                                        if (meta.data[index].hidden) {
+                                            legendItem.style.textDecoration = 'line-through';
+                                            legendItem.style.opacity = '0.5';
+                                            legendItem.style.color = '#9ca3af';
+                                        } else {
+                                            legendItem.style.textDecoration = 'none';
+                                            legendItem.style.opacity = '1';
+                                            legendItem.style.color = '#6b7280';
+                                        }
+                                    }
+                                }
+                            }, 50);
+                        },
+                        labels: {
+                            padding: 24,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12,
+                                weight: '500',
+                                family: 'Inter, system-ui, sans-serif'
+                            },
+                            color: '#6b7280',
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    const dataset = data.datasets[0];
+                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+                                    return data.labels.map((label, i) => {
+                                        const value = dataset.data[i];
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                        const meta = chart.getDatasetMeta(0);
+                                        const hidden = meta.data[i] ? meta.data[i].hidden : false;
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: hidden ? '#d1d5db' : dataset.backgroundColor[i],
+                                            strokeStyle: hidden ? '#d1d5db' : dataset.backgroundColor[i],
+                                            pointStyle: 'circle',
+                                            hidden: hidden,
+                                            index: i,
+                                            fontColor: hidden ? '#9ca3af' : '#6b7280'
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                        titleColor: '#1f2937',
+                        bodyColor: '#374151',
+                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                        borderWidth: 1,
+                        cornerRadius: 12,
+                        padding: 16,
+                        displayColors: true,
+                        boxPadding: 8,
+                        titleFont: {
+                            size: 13,
+                            weight: '600',
+                            family: 'Inter, system-ui, sans-serif'
+                        },
+                        bodyFont: {
+                            size: 12,
+                            weight: '500',
+                            family: 'Inter, system-ui, sans-serif'
+                        },
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label;
+                            },
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
+                                return `${context.parsed} reservasi (${percentage}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: {
+                            weight: '600',
+                            size: 11,
+                            family: 'Inter, system-ui, sans-serif'
+                        },
+                        formatter: function(value, context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : '0';
+                            return percentage + '%';
+                        },
+                        display: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? (context.parsed / total) * 100 : 0;
+                            return percentage > 8; // Hanya tampilkan label jika persentase > 8%
+                        },
+                        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+                        textShadowBlur: 2
+                    }
+                },
+                elements: {
+                    arc: {
+                        borderRadius: 6,
+                        borderJoinStyle: 'round'
+                    }
+                }
+            }
+        });
+    }
+
+    // Auto-submit filter form
+    const filterForm = document.getElementById('filterForm');
+    const filterElements = filterForm.querySelectorAll('select, input[type="date"]');
+
+    filterElements.forEach(element => {
+        element.addEventListener('change', () => {
+            // Hanya submit jika elemen terlihat (untuk menghindari submit dari date-picker yang tersembunyi)
+            if (element.offsetParent !== null) {
+                filterForm.submit();
+            }
+        });
+    });
+
+    // Set progress bar widths from data attributes
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+
+    // Monthly Report Filter Handler
+    const reportMonthSelect = document.getElementById('reportMonth');
+    if (reportMonthSelect) {
+        // Generate month options for the last 24 months
+        function generateMonthOptions() {
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                              'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const currentDate = new Date();
+            const options = [];
+            
+            // Generate options for last 24 months
+            for (let i = 2; i <= 25; i++) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 1);
+                const month = date.getMonth() + 1;
+                const year = date.getFullYear();
+                const monthName = monthNames[date.getMonth()];
+                
+                options.push({
+                    value: `${month}-${year}`,
+                    text: `${monthName} ${year}`,
+                    month: month,
+                    year: year
+                });
+            }
+            
+            return options;
+        }
+        
+        // Add month options to select
+        const monthOptions = generateMonthOptions();
+        monthOptions.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            optionElement.setAttribute('data-month', option.month);
+            optionElement.setAttribute('data-year', option.year);
+            reportMonthSelect.appendChild(optionElement);
+        });
+        
+        // Handle filter change
+        reportMonthSelect.addEventListener('change', function() {
+            // Save current scroll position
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            sessionStorage.setItem('monthlyReportScrollPosition', scrollPosition);
+            
+            const selectedValue = this.value;
+            const url = new URL(window.location);
+            
+            if (selectedValue === 'current') {
+                url.searchParams.set('reportMonth', 'current');
+                url.searchParams.delete('customMonth');
+                url.searchParams.delete('customYear');
+            } else if (selectedValue === 'previous') {
+                url.searchParams.set('reportMonth', 'previous');
+                url.searchParams.delete('customMonth');
+                url.searchParams.delete('customYear');
+            } else {
+                // Specific month-year selected
+                const selectedOption = this.options[this.selectedIndex];
+                const month = selectedOption.getAttribute('data-month');
+                const year = selectedOption.getAttribute('data-year');
+                
+                if (month && year) {
+                    url.searchParams.set('reportMonth', 'custom');
+                    url.searchParams.set('customMonth', month);
+                    url.searchParams.set('customYear', year);
+                }
+            }
+            
+            window.location.href = url.toString();
+        });
+        
+        // Set current selection based on URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentReportMonth = urlParams.get('reportMonth') || 'current';
+        const customMonth = urlParams.get('customMonth');
+        const customYear = urlParams.get('customYear');
+        
+        if (currentReportMonth === 'custom' && customMonth && customYear) {
+            // Find and select the matching month-year option
+            const targetValue = `${customMonth}-${customYear}`;
+            const option = reportMonthSelect.querySelector(`option[value="${targetValue}"]`);
+            if (option) {
+                reportMonthSelect.value = targetValue;
+            } else {
+                reportMonthSelect.value = 'current';
+            }
+        } else {
+            reportMonthSelect.value = currentReportMonth;
+        }
+    }
+
+    // Monthly Report Export Functions
+    window.exportToPDF = function() {
+        // Get current filter parameters including month filter
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Add monthly report filter parameters
+        const reportMonth = document.getElementById('reportMonth')?.value || 'current';
+        urlParams.set('reportMonth', reportMonth);
+        
+        if (reportMonth === 'custom') {
+            const customMonth = urlParams.get('customMonth');
+            const customYear = urlParams.get('customYear');
+            if (customMonth && customYear) {
+                urlParams.set('customMonth', customMonth);
+                urlParams.set('customYear', customYear);
+            }
+        }
+        
+        const exportUrl = '/admin/laporan/export-pdf?' + urlParams.toString();
+        
+        // Open PDF in new window
+        const pdfWindow = window.open(exportUrl, '_blank');
+        if (!pdfWindow) {
+            alert('Pop-up diblokir! Silakan izinkan pop-up untuk mengunduh PDF.');
+        }
+    };
+
+    window.printReport = function() {
+        // Get current filter parameters including month filter
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Add monthly report filter parameters
+        const reportMonth = document.getElementById('reportMonth')?.value || 'current';
+        urlParams.set('reportMonth', reportMonth);
+        
+        if (reportMonth === 'custom') {
+            const customMonth = urlParams.get('customMonth');
+            const customYear = urlParams.get('customYear');
+            if (customMonth && customYear) {
+                urlParams.set('customMonth', customMonth);
+                urlParams.set('customYear', customYear);
+            }
+        }
+        
+        const printUrl = '/admin/laporan/export-pdf?' + urlParams.toString();
+        
+        // Open in new window and trigger print
+        const printWindow = window.open(printUrl, '_blank');
+        if (printWindow) {
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.print();
+                }, 500);
+            };
+        } else {
+            alert('Pop-up diblokir! Silakan izinkan pop-up untuk mencetak laporan.');
+        }
+    };
+    
+    // Restore scroll position after page load (for monthly report filter)
+    window.addEventListener('load', function() {
+        const savedScrollPosition = sessionStorage.getItem('monthlyReportScrollPosition');
+        if (savedScrollPosition) {
+            // Small delay to ensure page is fully rendered
+            setTimeout(function() {
+                window.scrollTo(0, parseInt(savedScrollPosition));
+                // Clear the saved position after using it
+                sessionStorage.removeItem('monthlyReportScrollPosition');
+            }, 100);
+        }
+    });
+});
+</script>
+
+<%- include('../partials/admin-layout-footer') %>

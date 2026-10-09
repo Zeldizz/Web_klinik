@@ -1,0 +1,711 @@
+<%- include('../partials/admin-layout-header') %>
+<%- include('../partials/admin-sidebar') %>
+
+<%
+// Helper function to calculate age
+const calculateAge = (birthDate) => {
+    if (!birthDate) return '-';
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDifference = today.getMonth() - birth.getMonth();
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+};
+%>
+
+<!-- Page Content -->
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-custom">
+                <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i><%= title %></h5>
+            </div>
+            <div class="card-body">
+                <!-- Patient & Reservation Info -->
+                <div class="p-3 mb-4 rounded" style="background-color: #f0f8ff;">
+                    <h6 class="border-bottom pb-2 mb-3"><strong><i class="fas fa-user-injured me-2"></i>Informasi Pasien & Reservasi</strong></h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Tgl. Reservasi</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.tanggal_reservasi ? new Date(rekamMedis.tanggal_reservasi).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-' %></dd>
+                                
+                                <dt class="col-sm-5">ID Reservasi</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.reservasi_id %></dd>
+
+                                <dt class="col-sm-5">Keluhan Utama</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.keluhan || '-' %></dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">NIK</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.nik || '-' %></dd>
+
+                                <dt class="col-sm-5">Nama Pasien</dt>
+                                <dd class="col-sm-7">: <strong><%= rekamMedis.nama_pasien %></strong></dd>
+
+                                <dt class="col-sm-5">Jenis Kelamin</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.jenis_kelamin || '-' %></dd>
+                                
+                                <dt class="col-sm-5">Tgl. Lahir / Usia</dt>
+                                <dd class="col-sm-7">: <%= rekamMedis.tanggal_lahir ? `${new Date(rekamMedis.tanggal_lahir).toLocaleDateString('id-ID')} (${calculateAge(rekamMedis.tanggal_lahir)} thn)` : '-' %></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error_msg %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+
+                <!-- Medical Record Form -->
+                <form action="<%= action %>" method="POST">
+                    <input type="hidden" name="reservasi_id" value="<%= rekamMedis.reservasi_id %>">
+                    <input type="hidden" name="pasien_id" value="<%= rekamMedis.pasien_id %>">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="admin_id" class="form-label"><strong>Ditangani Oleh</strong> <span class="text-danger">*</span></label>
+                            <select class="form-select" id="admin_id" name="admin_id" required>
+                                <option value="" disabled <%= !rekamMedis.admin_id ? 'selected' : '' %>>Pilih Tenaga Medis</option>
+                                <% if (tenagaMedis && tenagaMedis.length > 0) { %>
+                                    <% tenagaMedis.forEach(dokter => { %>
+                                        <option value="<%= dokter.id %>" <%= (rekamMedis.admin_id == dokter.id) ? 'selected' : '' %>>
+                                            <%= dokter.nama_lengkap %>
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tanggal_pemeriksaan" class="form-label"><strong>Tanggal Pemeriksaan</strong> <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="tanggal_pemeriksaan" name="tanggal_pemeriksaan" value="<%= rekamMedis.tanggal_pemeriksaan ? new Date(new Date(rekamMedis.tanggal_pemeriksaan).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().substring(0, 16) : new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().substring(0, 16) %>" required>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <strong>Pemeriksaan Tanda Vital (Keadaan Umum)</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="nadi" class="form-label"><strong>Nadi (x/menit)</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nadi" name="nadi" value="<%= rekamMedis.nadi || '' %>" placeholder="cth: 80" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="suhu" class="form-label"><strong>Suhu (°C)</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="suhu" name="suhu" value="<%= rekamMedis.suhu || '' %>" placeholder="cth: 36.5" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="pernafasan" class="form-label"><strong>Pernafasan (x/menit)</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="pernafasan" name="pernafasan" value="<%= rekamMedis.pernafasan || '' %>" placeholder="cth: 20" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="tekanan_darah" class="form-label"><strong>Tekanan Darah (mmHg)</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="tekanan_darah" name="tekanan_darah" value="<%= rekamMedis.tekanan_darah || '' %>" placeholder="cth: 120/80" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="tinggi_badan" class="form-label"><strong>Tinggi Badan (cm)</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="tinggi_badan" name="tinggi_badan" value="<%= rekamMedis.tinggi_badan || '' %>" placeholder="cth: 170" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="berat_badan" class="form-label"><strong>Berat Badan (kg)</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="berat_badan" name="berat_badan" value="<%= rekamMedis.berat_badan || '' %>" placeholder="cth: 65" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="diagnosis" class="form-label"><strong>Diagnosis</strong> <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="diagnosis" name="diagnosis" rows="4" placeholder="Tuliskan hasil diagnosis..." required><%= rekamMedis.diagnosis || '' %></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tindakan" class="form-label"><strong>Tindakan</strong> <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="tindakan" name="tindakan" rows="4" placeholder="Tuliskan tindakan yang diberikan..." required><%= rekamMedis.tindakan || '' %></textarea>
+                    </div>
+
+                    <!-- Resep Obat Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <strong><i class="fas fa-pills me-2"></i>Resep Obat</strong>
+                        </div>
+                        <div class="card-body">
+                            <div id="obat-container">
+                                <!-- Template akan diisi oleh JavaScript berdasarkan data yang ada -->
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <button type="button" id="tambah-obat" class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus me-2"></i>Tambah Obat
+                                </button>
+                                <small class="text-muted">Minimal 1 obat harus dipilih</small>
+                            </div>
+                            
+                            <!-- Hidden field untuk menyimpan data obat dalam format string -->
+                            <input type="hidden" id="resep_obat" name="resep_obat" value="<%= rekamMedis.resep_obat || '' %>">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="catatan_tambahan" class="form-label"><strong>Catatan Tambahan</strong> (Opsional)</label>
+                        <textarea class="form-control" id="catatan_tambahan" name="catatan_tambahan" rows="3" placeholder="Catatan lain jika ada..."><%= rekamMedis.catatan_tambahan || '' %></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <a href="/admin/reservasi" class="btn btn-secondary me-2">Batal</a>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Simpan Rekam Medis</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fungsi untuk menambahkan fitur search pada select
+function addSearchToSelect(selectElement) {
+    // Simpan opsi asli
+    const originalOptions = Array.from(selectElement.options);
+    
+    // Buat wrapper container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'select-search-wrapper position-relative';
+    
+    // Pindahkan select ke dalam wrapper
+    selectElement.parentNode.insertBefore(wrapper, selectElement);
+    wrapper.appendChild(selectElement);
+    
+    // Buat input search
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'form-control search-input';
+    searchInput.placeholder = 'Ketik untuk mencari obat... (atau klik dropdown)';
+    searchInput.style.cssText = 'margin-bottom: 5px;';
+    
+    // Buat icon search
+    const searchIcon = document.createElement('i');
+    searchIcon.className = 'fas fa-search position-absolute';
+    searchIcon.style.cssText = 'right: 10px; top: 8px; color: #6c757d; pointer-events: none; z-index: 5;';
+    
+    // Buat dropdown hasil pencarian
+    const searchDropdown = document.createElement('div');
+    searchDropdown.className = 'search-dropdown position-absolute w-100 bg-white border rounded shadow-lg';
+    searchDropdown.style.cssText = `
+        display: none; 
+        max-height: 250px; 
+        overflow-y: auto; 
+        z-index: 1050; 
+        top: 100%; 
+        left: 0;
+        border: 1px solid #ced4da;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    `;
+    
+    // Insert elements
+    wrapper.insertBefore(searchInput, selectElement);
+    wrapper.appendChild(searchIcon);
+    wrapper.appendChild(searchDropdown);
+
+    // --- PERBAIKAN: Menggunakan Event Delegation ---
+    // Tambahkan SATU event listener ke parent (searchDropdown)
+    searchDropdown.addEventListener('click', function(e) {
+        // Cek apakah yang diklik adalah elemen item atau di dalamnya
+        const item = e.target.closest('.search-dropdown-item');
+        if (item) {
+            selectOption(item.dataset.value, item.dataset.text);
+        }
+    });
+    
+    // Fungsi untuk highlight text
+    function highlightText(text, searchTerm) {
+        if (!searchTerm) return text;
+        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<mark style="background-color: #fff3cd; padding: 1px 2px;">$1</mark>');
+    }
+    
+    // Fungsi untuk update dropdown pencarian
+    function updateSearchDropdown(searchTerm) {
+        searchDropdown.innerHTML = '';
+        
+        let filteredOptions;
+        if (!searchTerm.trim()) {
+            // Jika tidak ada search term, tampilkan semua opsi
+            filteredOptions = originalOptions.filter(option => option.value !== '');
+        } else {
+            // Filter berdasarkan search term
+            filteredOptions = originalOptions.filter(option => 
+                option.value !== '' && 
+                option.text.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+        
+        if (filteredOptions.length === 0 && searchTerm.trim()) {
+            const noResult = document.createElement('div');
+            noResult.className = 'p-3 text-muted text-center';
+            noResult.innerHTML = '<i class="fas fa-search"></i> Tidak ada obat yang ditemukan';
+            searchDropdown.appendChild(noResult);
+        } else {
+            // Batasi hasil maksimal 15 untuk performa
+            const maxResults = 15;
+            const displayOptions = filteredOptions.slice(0, maxResults);
+            
+            displayOptions.forEach((option, index) => {
+                const item = document.createElement('div');
+                item.className = 'search-dropdown-item p-2';
+                item.style.cssText = `
+                    cursor: pointer; 
+                    border-bottom: 1px solid #f1f3f4;
+                    transition: background-color 0.2s ease;
+                `;
+                item.innerHTML = highlightText(option.text, searchTerm);
+                item.dataset.value = option.value;
+                item.dataset.text = option.text;
+                
+                // Hover effects
+                item.addEventListener('mouseenter', function() {
+                    // Remove active class from all items
+                    searchDropdown.querySelectorAll('.search-dropdown-item').forEach(i => {
+                        i.classList.remove('active');
+                        i.style.backgroundColor = '';
+                    });
+                    // Add active class to current item
+                    this.classList.add('active');
+                    this.style.backgroundColor = '#e3f2fd';
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('keyboard-active')) {
+                        this.classList.remove('active');
+                        this.style.backgroundColor = '';
+                    }
+                });
+                
+
+                
+                searchDropdown.appendChild(item);
+            });
+            
+            // Tampilkan info jika ada lebih banyak hasil
+            if (filteredOptions.length > maxResults) {
+                const moreInfo = document.createElement('div');
+                moreInfo.className = 'p-2 text-muted text-center border-top';
+                moreInfo.style.cssText = 'font-size: 0.875rem; background-color: #f8f9fa;';
+                moreInfo.innerHTML = `<i class="fas fa-info-circle"></i> Dan ${filteredOptions.length - maxResults} obat lainnya...`;
+                searchDropdown.appendChild(moreInfo);
+            }
+        }
+        
+        searchDropdown.style.display = 'block';
+    }
+    
+    // Fungsi untuk memilih opsi
+    function selectOption(value, text) {
+        selectElement.value = value;
+        searchInput.value = '';
+        searchDropdown.style.display = 'none';
+        
+        // Trigger change event
+        const changeEvent = new Event('change', { bubbles: true });
+        selectElement.dispatchEvent(changeEvent);
+    }
+    
+    // Event listeners untuk search input
+    searchInput.addEventListener('input', function() {
+        updateSearchDropdown(this.value);
+    });
+    
+    searchInput.addEventListener('focus', function() {
+        updateSearchDropdown(this.value);
+    });
+    
+    searchInput.addEventListener('blur', function() {
+        // Delay untuk memungkinkan click pada dropdown
+        setTimeout(() => {
+            searchDropdown.style.display = 'none';
+        }, 200);
+    });
+    
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', function(e) {
+        const items = searchDropdown.querySelectorAll('.search-dropdown-item');
+        let activeIndex = Array.from(items).findIndex(item => item.classList.contains('active'));
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (activeIndex < items.length - 1) {
+                    if (activeIndex >= 0) {
+                        items[activeIndex].classList.remove('active', 'keyboard-active');
+                        items[activeIndex].style.backgroundColor = '';
+                    }
+                    activeIndex++;
+                    items[activeIndex].classList.add('active', 'keyboard-active');
+                    items[activeIndex].style.backgroundColor = '#e3f2fd';
+                    items[activeIndex].scrollIntoView({ block: 'nearest' });
+                }
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                if (activeIndex > 0) {
+                    items[activeIndex].classList.remove('active', 'keyboard-active');
+                    items[activeIndex].style.backgroundColor = '';
+                    activeIndex--;
+                    items[activeIndex].classList.add('active', 'keyboard-active');
+                    items[activeIndex].style.backgroundColor = '#e3f2fd';
+                    items[activeIndex].scrollIntoView({ block: 'nearest' });
+                }
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0 && items[activeIndex]) {
+                    selectOption(items[activeIndex].dataset.value, items[activeIndex].dataset.text);
+                }
+                break;
+                
+            case 'Escape':
+                searchDropdown.style.display = 'none';
+                this.blur();
+                break;
+        }
+    });
+    
+    // Click outside to close
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            searchDropdown.style.display = 'none';
+        }
+    });
+}
+
+// Fungsi untuk membuat template obat baru
+function createObatTemplate(index, selectedObat = '', selectedAturanMinum = '', selectedWaktuKonsumsi = '') {
+    const obatOptions = [
+        // Obat Demam & Nyeri
+        'Paracetamol 500mg', 'Paracetamol Sirup 120mg/5ml', 'Ibuprofen 400mg', 'Ibuprofen Sirup 100mg/5ml',
+        'Aspirin 500mg', 'Metamizole 500mg', 'Diclofenac 50mg', 'Diclofenac Gel 1%',
+        
+        // Antibiotik
+        'Amoxicillin 500mg', 'Amoxicillin Sirup 125mg/5ml', 'Ampicillin 500mg', 'Ciprofloxacin 500mg',
+        'Azithromycin 500mg', 'Cefixime 200mg', 'Cefadroxil 500mg', 'Erythromycin 500mg',
+        'Cloxacillin 500mg', 'Cotrimoxazole 480mg', 'Doxycycline 100mg',
+        
+        // Obat Alergi & Antihistamin
+        'Cetirizine 10mg', 'Cetirizine Sirup 5mg/5ml', 'Loratadine 10mg', 'Chlorpheniramine 4mg',
+        'Diphenhydramine 25mg', 'Fexofenadine 120mg', 'Desloratadine 5mg',
+        
+        // Obat Pencernaan
+        'Omeprazole 20mg', 'Ranitidine 150mg', 'Antasida Tablet', 'Antasida Sirup',
+        'Domperidone 10mg', 'Metoclopramide 10mg', 'Loperamide 2mg', 'Bismuth Subsalicylate',
+        'Lansoprazole 30mg', 'Sucralfate 500mg', 'Simethicone 40mg', 'ORS (Oralit)',
+        
+        // Obat Batuk & Pilek
+        'Dextromethorphan 15mg', 'Guaifenesin 200mg', 'Bromhexine 8mg', 'Ambroxol 30mg',
+        'Salbutamol 2mg', 'Salbutamol Sirup 2mg/5ml', 'Theophylline 200mg',
+        
+        // Obat Gigi & Mulut
+        'Asam Mefenamat 500mg', 'Benzocaine Gel', 'Povidone Iodine Gargle', 'Chlorhexidine Mouthwash',
+        
+        // Salep & Obat Luar
+        'Betamethasone Cream 0.1%', 'Hydrocortisone Cream 1%', 'Ketoconazole Cream 2%',
+        'Miconazole Cream 2%', 'Gentamicin Cream 0.1%', 'Acyclovir Cream 5%',
+        'Calamine Lotion', 'Povidone Iodine Solution 10%', 'Silver Sulfadiazine Cream 1%',
+        'Clotrimazole Cream 1%', 'Neomycin Sulfate Ointment', 'Zinc Oxide Ointment',
+        
+        // Obat Mata & Telinga
+        'Chloramphenicol Eye Drops 0.5%', 'Ofloxacin Eye Drops 0.3%', 'Artificial Tears',
+        'Ofloxacin Ear Drops 0.3%', 'Waxsol Ear Drops',
+        
+        // Obat Kardiovaskular
+        'Amlodipine 5mg', 'Captopril 25mg', 'Atenolol 50mg', 'Furosemide 40mg',
+        'Simvastatin 20mg', 'Atorvastatin 20mg', 'Bisoprolol 5mg',
+        
+        // Obat Diabetes
+        'Metformin 500mg', 'Glibenclamide 5mg', 'Glimepiride 2mg', 'Acarbose 50mg',
+        
+        // Vitamin & Suplemen
+        'Vitamin B Complex', 'Vitamin C 500mg', 'Vitamin D3 1000 IU', 'Vitamin E 400 IU',
+        'Folic Acid 5mg', 'Iron Sulfate 200mg', 'Calcium Carbonate 500mg', 'Zinc Sulfate 20mg',
+        'Multivitamin Tablet', 'Cod Liver Oil Capsule',
+        
+        // Obat Lain-lain
+        'Dexamethasone 0.5mg', 'Prednisolone 5mg', 'Methylprednisolone 4mg',
+        'Allopurinol 100mg', 'Colchicine 0.5mg', 'Phenytoin 100mg'
+    ].sort(); // Mengurutkan secara alfabetis
+    
+    const aturanMinumOptions = [
+        // Tablet
+        '1 x 1 tablet per hari', '2 x 1 tablet per hari', '3 x 1 tablet per hari',
+        '1 x 2 tablet per hari', '2 x 2 tablet per hari', '3 x 2 tablet per hari',
+        '4 x 1 tablet per hari', '1 x 1/2 tablet per hari', '2 x 1/2 tablet per hari',
+        
+        // Kapsul
+        '1 x 1 kapsul per hari', '2 x 1 kapsul per hari', '3 x 1 kapsul per hari',
+        '1 x 2 kapsul per hari', '2 x 2 kapsul per hari', '3 x 2 kapsul per hari',
+        '4 x 1 kapsul per hari',
+        
+        // Sirup/Cairan
+        '1 x 1 sendok teh per hari', '2 x 1 sendok teh per hari', '3 x 1 sendok teh per hari',
+        '1 x 2 sendok teh per hari', '2 x 2 sendok teh per hari', '3 x 2 sendok teh per hari',
+        '1 x 1 sendok makan per hari', '2 x 1 sendok makan per hari', '3 x 1 sendok makan per hari',
+        '1 x 2 sendok makan per hari', '2 x 2 sendok makan per hari', '3 x 2 sendok makan per hari',
+        '1 x 5ml per hari', '2 x 5ml per hari', '3 x 5ml per hari',
+        '1 x 10ml per hari', '2 x 10ml per hari', '3 x 10ml per hari',
+        
+        // Salep/Cream/Gel
+        'Oleskan tipis 1x sehari', 'Oleskan tipis 2x sehari', 'Oleskan tipis 3x sehari',
+        'Oleskan secukupnya 1x sehari', 'Oleskan secukupnya 2x sehari', 'Oleskan secukupnya 3x sehari',
+        'Oleskan pada area yang sakit', 'Oleskan setelah dibersihkan',
+        
+        // Tetes Mata/Telinga
+        '1 tetes pada mata yang sakit 2x sehari', '1 tetes pada mata yang sakit 3x sehari',
+        '2 tetes pada mata yang sakit 2x sehari', '2 tetes pada mata yang sakit 3x sehari',
+        '1-2 tetes pada mata yang sakit 4x sehari',
+        '2-3 tetes pada telinga yang sakit 2x sehari', '2-3 tetes pada telinga yang sakit 3x sehari',
+        
+        // Kumur/Gargle
+        'Kumur 2x sehari', 'Kumur 3x sehari', 'Kumur setelah makan',
+        'Kumur dengan 15ml selama 30 detik',
+        
+        // Khusus
+        'Sesuai kebutuhan (bila perlu)', 'Sekali pakai', 'Sampai habis',
+        'Selama 3 hari', 'Selama 5 hari', 'Selama 7 hari', 'Selama 10 hari', 'Selama 14 hari'
+    ];
+    
+    const waktuKonsumsiOptions = [
+        'Sebelum makan', 'Sesudah makan', 'Bersamaan dengan makan',
+        'Saat perlu (bila sakit)', 'Sebelum tidur', 'Pagi hari', 'Siang hari', 'Malam hari',
+        'Saat perut kosong', 'Dengan banyak air'
+    ];
+    
+    let obatOptionsHTML = '<option value="">Pilih Obat...</option>';
+    obatOptions.forEach(option => {
+        const selected = option === selectedObat ? 'selected' : '';
+        obatOptionsHTML += `<option value="${option}" ${selected}>${option}</option>`;
+    });
+    
+    let aturanMinumOptionsHTML = '<option value="">Pilih Aturan Minum...</option>';
+    aturanMinumOptions.forEach(option => {
+        const selected = option === selectedAturanMinum ? 'selected' : '';
+        aturanMinumOptionsHTML += `<option value="${option}" ${selected}>${option}</option>`;
+    });
+    
+    let waktuKonsumsiOptionsHTML = '<option value="">Pilih Waktu Konsumsi...</option>';
+    waktuKonsumsiOptions.forEach(option => {
+        const selected = option === selectedWaktuKonsumsi ? 'selected' : '';
+        waktuKonsumsiOptionsHTML += `<option value="${option}" ${selected}>${option}</option>`;
+    });
+    
+    return `
+        <div class="obat-item border rounded p-3 mb-3" data-index="${index}">
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label"><strong>Nama Obat</strong> <span class="text-danger">*</span></label>
+                    <select class="form-select obat-select" name="obat_nama[]" required>
+                        ${obatOptionsHTML}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label"><strong>Aturan Minum</strong> <span class="text-danger">*</span></label>
+                    <select class="form-select aturan-minum-select" name="obat_aturan_minum[]" required>
+                        ${aturanMinumOptionsHTML}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label"><strong>Waktu Konsumsi</strong> <span class="text-danger">*</span></label>
+                    <select class="form-select waktu-konsumsi-select" name="obat_waktu_konsumsi[]" required>
+                        ${waktuKonsumsiOptionsHTML}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-obat">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Fungsi untuk update hidden field resep_obat
+function updateResepObatField() {
+    const obatItems = document.querySelectorAll('.obat-item');
+    const resepData = [];
+    
+    obatItems.forEach(item => {
+        const namaObat = item.querySelector('.obat-select').value;
+        const aturanMinum = item.querySelector('.aturan-minum-select').value;
+        const waktuKonsumsi = item.querySelector('.waktu-konsumsi-select').value;
+        
+        if (namaObat && aturanMinum && waktuKonsumsi) {
+            resepData.push(`${namaObat} - ${aturanMinum} - ${waktuKonsumsi}`);
+        }
+    });
+    
+    document.getElementById('resep_obat').value = resepData.join('; ');
+}
+
+// Fungsi untuk toggle tombol hapus
+function toggleRemoveButtons() {
+    const obatItems = document.querySelectorAll('.obat-item');
+    const removeButtons = document.querySelectorAll('.remove-obat');
+    
+    removeButtons.forEach(button => {
+        button.style.display = obatItems.length > 1 ? 'block' : 'none';
+    });
+}
+
+// Fungsi untuk menginisialisasi form dengan data yang ada
+function initializeObatForm() {
+    const container = document.getElementById('obat-container');
+    const existingResepObat = document.getElementById('resep_obat').value;
+    
+    // Cek apakah ada data obat dari server (form submission error)
+    const serverObatNama = '<%= JSON.stringify(rekamMedis.obat_nama || []) %>';
+    const serverObatAturanMinum = '<%= JSON.stringify(rekamMedis.obat_aturan_minum || []) %>';
+    const serverObatWaktuKonsumsi = '<%= JSON.stringify(rekamMedis.obat_waktu_konsumsi || []) %>';
+    
+    let obatNamaArray, obatAturanMinumArray, obatWaktuKonsumsiArray;
+    try {
+        obatNamaArray = JSON.parse(serverObatNama);
+        obatAturanMinumArray = JSON.parse(serverObatAturanMinum);
+        obatWaktuKonsumsiArray = JSON.parse(serverObatWaktuKonsumsi);
+    } catch (e) {
+        obatNamaArray = [];
+        obatAturanMinumArray = [];
+        obatWaktuKonsumsiArray = [];
+    }
+    
+    // Jika ada data dari form submission sebelumnya (error case)
+    if (obatNamaArray.length > 0 && obatAturanMinumArray.length > 0 && obatWaktuKonsumsiArray.length > 0) {
+        for (let i = 0; i < obatNamaArray.length; i++) {
+            const namaValue = obatNamaArray[i] || '';
+            const aturanMinumValue = obatAturanMinumArray[i] || '';
+            const waktuKonsumsiValue = obatWaktuKonsumsiArray[i] || '';
+            
+            const newObatHTML = createObatTemplate(i, namaValue, aturanMinumValue, waktuKonsumsiValue);
+            container.insertAdjacentHTML('beforeend', newObatHTML);
+        }
+    }
+    // Jika ada data dari existing record (edit case)
+    else if (existingResepObat && existingResepObat.trim() !== '') {
+        const resepItems = existingResepObat.split(';');
+        resepItems.forEach((item, index) => {
+            const parts = item.trim().split(' - ');
+            if (parts.length === 3) {
+                // Format baru: "Nama Obat - Aturan Minum - Waktu Konsumsi"
+                const namaObat = parts[0].trim();
+                const aturanMinum = parts[1].trim();
+                const waktuKonsumsi = parts[2].trim();
+                const newObatHTML = createObatTemplate(index, namaObat, aturanMinum, waktuKonsumsi);
+                container.insertAdjacentHTML('beforeend', newObatHTML);
+            } else if (parts.length === 2) {
+                // Format lama: "Nama Obat - Aturan Konsumsi" (untuk backward compatibility)
+                const namaObat = parts[0].trim();
+                const aturanLama = parts[1].trim();
+                // Coba pisahkan aturan lama jika memungkinkan
+                const newObatHTML = createObatTemplate(index, namaObat, aturanLama, '');
+                container.insertAdjacentHTML('beforeend', newObatHTML);
+            }
+        });
+    }
+    // Jika tidak ada data, buat template kosong pertama
+    else {
+        const newObatHTML = createObatTemplate(0);
+        container.insertAdjacentHTML('beforeend', newObatHTML);
+    }
+    
+    // Initialize search hanya untuk dropdown obat (tidak untuk aturan minum dan waktu konsumsi)
+    container.querySelectorAll('.obat-select').forEach(select => {
+        addSearchToSelect(select);
+    });
+    
+    toggleRemoveButtons();
+}
+
+// Event listener untuk DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    let obatCounter = 1;
+    
+    // Initialize form dengan data yang ada
+    initializeObatForm();
+    
+    // Event listener untuk tombol tambah obat
+    document.getElementById('tambah-obat').addEventListener('click', function() {
+        const container = document.getElementById('obat-container');
+        const newObatHTML = createObatTemplate(obatCounter);
+        
+        container.insertAdjacentHTML('beforeend', newObatHTML);
+        
+        // Initialize search hanya untuk dropdown obat baru (tidak untuk aturan minum dan waktu konsumsi)
+        const newItem = container.lastElementChild;
+        newItem.querySelectorAll('.obat-select').forEach(select => {
+            addSearchToSelect(select);
+        });
+        
+        obatCounter++;
+        toggleRemoveButtons();
+    });
+    
+    // Event listener untuk tombol hapus obat (menggunakan event delegation)
+    document.getElementById('obat-container').addEventListener('click', function(e) {
+        if (e.target.closest('.remove-obat')) {
+            e.target.closest('.obat-item').remove();
+            toggleRemoveButtons();
+            updateResepObatField();
+        }
+    });
+    
+    // Event listener untuk perubahan dropdown (update hidden field)
+    document.getElementById('obat-container').addEventListener('change', function(e) {
+        if (e.target.classList.contains('obat-select') || 
+            e.target.classList.contains('aturan-minum-select') || 
+            e.target.classList.contains('waktu-konsumsi-select')) {
+            updateResepObatField();
+        }
+    });
+    
+    // Initialize toggle remove buttons
+    toggleRemoveButtons();
+    
+    // Form validation sebelum submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const obatItems = document.querySelectorAll('.obat-item');
+        let hasValidObat = false;
+        
+        obatItems.forEach(item => {
+            const namaObat = item.querySelector('.obat-select').value;
+            const aturanMinum = item.querySelector('.aturan-minum-select').value;
+            const waktuKonsumsi = item.querySelector('.waktu-konsumsi-select').value;
+            
+            if (namaObat && aturanMinum && waktuKonsumsi) {
+                hasValidObat = true;
+            }
+        });
+        
+        if (!hasValidObat) {
+            e.preventDefault();
+            alert('Minimal harus memilih 1 obat beserta aturan minum dan waktu konsumsinya!');
+            return false;
+        }
+        
+        // Update hidden field sebelum submit
+        updateResepObatField();
+    });
+});
+</script>
+
+<%- include('../partials/admin-layout-footer') %>

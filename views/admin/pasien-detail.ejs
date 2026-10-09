@@ -1,0 +1,81 @@
+<%- include('../partials/admin-layout-header') %>
+<%- include('../partials/admin-sidebar') %>
+
+<!-- Page Content -->
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <% if (patient) { %>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Profil Pasien</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Nama:</strong><br><%= patient.nama %></p>
+                            <p class="mb-2"><strong>NIK (No. KTP):</strong><br><%= patient.no_ktp || '-' %></p>
+                            <p class="mb-2"><strong>No. Telepon:</strong><br><%= patient.no_telepon || '-' %></p>
+                            <p class="mb-2"><strong>Email:</strong><br><%= patient.email || '-' %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Tanggal Lahir:</strong><br><%= new Date(patient.tanggal_lahir).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) %></p>
+                            <p class="mb-2"><strong>Jenis Kelamin:</strong><br><%= patient.jenis_kelamin %></p>
+                            <p class="mb-2"><strong>Alamat:</strong><br><%= patient.alamat || '-' %></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Riwayat Pemeriksaan Pasien</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal Periksa</th>
+                                    <th>Keluhan</th>
+                                    <th>Diagnosis</th>
+                                    <th>Dokter</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (medicalRecords.length > 0) { %>
+                                    <% medicalRecords.forEach(record => { %>
+                                        <tr>
+                                            <td><%= new Date(record.tanggal_pemeriksaan).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) %></td>
+                                            <td><%= record.keluhan %></td>
+                                            <td><%= record.diagnosis %></td>
+                                            <td><%= record.nama_dokter %></td>
+                                            <td>
+                                                <a href="/admin/rekam-medis/detail/<%= record.id %>" class="btn btn-sm btn-info">Lihat Detail</a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="5" class="text-center">Pasien ini belum memiliki riwayat pemeriksaan.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="alert alert-warning">
+                Profil pasien tidak ditemukan.
+            </div>
+        <% } %>
+        <div class="mt-3">
+            <a href="/admin/pasien" class="btn btn-secondary">Kembali ke Daftar Pasien</a>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/admin-layout-footer') %>

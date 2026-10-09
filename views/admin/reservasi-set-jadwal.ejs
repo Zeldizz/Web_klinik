@@ -1,0 +1,48 @@
+<%- include('../partials/admin-layout-header') %>
+<%- include('../partials/admin-sidebar') %>
+
+<div id="content">
+    <%- include('../partials/admin-top-nav') %>
+
+    <div class="main-content">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Atur & Konfirmasi Jadwal Reservasi</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">Detail Pasien</h6>
+                <p><strong>Nama:</strong> <%= reservasi.nama_pasien %><br>
+                <strong>Tanggal Pilihan:</strong> <%= new Date(reservasi.tanggal_reservasi).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %><br>
+                <strong>Keluhan:</strong> <%= reservasi.keluhan %></p>
+                <hr>
+
+                <% if (availableSessions.length > 0) { %>
+                    <form action="/admin/reservasi/atur-jadwal/<%= reservasi.id %>" method="POST">
+                        <div class="mb-3">
+                            <label for="sesi_data" class="form-label"><strong>Pilih Sesi yang Tersedia:</strong></label>
+                            <select name="sesi_data" id="sesi_data" class="form-select" required>
+                                <option value="" disabled selected>-- Pilih Jam Sesi --</option>
+                                <% availableSessions.forEach(sesi => { %>
+                                    <option value="<%= sesi.id %>|<%= sesi.jam_mulai %> - <%= sesi.jam_selesai %>">
+                                        <%= sesi.jam_mulai %> - <%= sesi.jam_selesai %> (Dr. <%= sesi.nama_dokter %>)
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Konfirmasi & Simpan Jadwal</button>
+                        <a href="/admin/reservasi" class="btn btn-secondary">Batal</a>
+                    </form>
+                <% } else { %>
+                    <div class="alert alert-warning">
+                        <strong>Tidak ada jadwal dokter yang tersedia pada hari yang dipilih pasien.</strong>
+                        <p>Anda bisa menambahkan jadwal baru untuk hari ini atau menolak reservasi.</p>
+                        <a href="/admin/jadwal/tambah" class="btn btn-sm btn-primary">Tambah Jadwal Dokter</a>
+                        <a href="/admin/reservasi" class="btn btn-sm btn-secondary">Kembali ke Reservasi</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/admin-layout-footer') %> 

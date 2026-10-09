@@ -1,0 +1,373 @@
+<%- include('partials/header') %>
+
+<div class="container section-padding-sm">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card card-modern text-center mb-5">
+                <div class="card-body py-5">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle" style="width: 80px; height: 80px;">
+                            <i class="fas fa-user-md text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                    <h1 class="display-5 mb-3 text-primary">Selamat Datang, <%= user.nama %>!</h1>
+                    <p class="lead mb-4 text-muted">
+                        Kami siap membantu menjaga kesehatan Anda dan keluarga. Buat janji temu dengan dokter kami untuk mendapatkan pelayanan kesehatan terbaik.
+                    </p>
+                    <a href="/reservasi" class="btn btn-primary btn-lg">
+                        <i class="fas fa-calendar-plus me-2"></i> Buat Reservasi Baru
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <% if (typeof reservations !== 'undefined' && reservations.length > 0) { %>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold mb-3">Reservasi Aktif Anda</h2>
+                <p class="text-muted">Kelola dan pantau status reservasi Anda</p>
+            </div>
+            <div class="accordion" id="reservasiAccordion">
+                <% reservations.forEach(function(reservasi, index) { %>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading<%= reservasi.id %>">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= reservasi.id %>" aria-expanded="false" aria-controls="collapse<%= reservasi.id %>">
+                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">Reservasi: <%= reservasi.tanggal_formatted %></h6>
+                                        <p class="mb-0 text-muted small">Keluhan: <%= reservasi.keluhan %></p>
+                                    </div>
+                                    <div class="text-end">
+                                        <% 
+                                            let badgeClass = 'bg-secondary';
+                                            if (reservasi.status === 'Menunggu') badgeClass = 'bg-warning';
+                                            else if (reservasi.status === 'Dikonfirmasi') badgeClass = 'bg-success';
+                                            else if (reservasi.status === 'Ditolak') badgeClass = 'bg-danger';
+                                        %>
+                                        <span class="badge <%= badgeClass %> rounded-pill"><%= reservasi.status %></span>
+                                        <% if (reservasi.status === 'Dikonfirmasi' && reservasi.nomor_antrian && reservasi.jam_estimasi) { %>
+                                            <div class="mt-1">
+                                                <small class="text-muted d-block">Antrean: <strong>#<%= reservasi.nomor_antrian %></strong></small>
+                                                <small class="text-muted d-block">Pukul: <strong><%= reservasi.jam_estimasi %> WIB</strong></small>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse<%= reservasi.id %>" class="accordion-collapse collapse" aria-labelledby="heading<%= reservasi.id %>" data-bs-parent="#reservasiAccordion">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold mb-3">Detail Reservasi</h6>
+                                        <div class="mb-2">
+                                            <small class="text-muted">Tanggal Reservasi:</small>
+                                            <div class="fw-semibold"><%= reservasi.tanggal_formatted %></div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">Keluhan:</small>
+                                            <div class="fw-semibold"><%= reservasi.keluhan %></div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">Dibuat pada:</small>
+                                            <div class="fw-semibold"><%= reservasi.dibuat_pada %></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold mb-3">Status Informasi</h6>
+                                        <% if (reservasi.status === 'Menunggu') { %>
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-clock me-2"></i>
+                                                <strong>Menunggu Konfirmasi</strong><br>
+                                                <small>Reservasi sedang diproses oleh admin. Mohon tunggu notifikasi selanjutnya.</small>
+                                            </div>
+                                        <% } else if (reservasi.status === 'Dikonfirmasi') { %>
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Reservasi Dikonfirmasi</strong><br>
+                                                <small>Silakan datang sesuai jadwal yang telah ditentukan.</small>
+                                            </div>
+                                        <% } else if (reservasi.status === 'Ditolak') { %>
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-times-circle me-2"></i>
+                                                <strong>Reservasi Ditolak</strong><br>
+                                                <small>Silakan buat reservasi baru dengan waktu yang berbeda.</small>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <ul class="timeline">
+                                    <% const isDikonfirmasi = reservasi.status === 'Dikonfirmasi'; %>
+                                    <li class="timeline-item active">
+                                        <strong>Reservasi Dibuat</strong>
+                                        <p class="text-muted mb-0">Anda telah berhasil membuat reservasi dan sedang menunggu konfirmasi dari pihak klinik.</p>
+                                    </li>
+                                    <li class="timeline-item <%= isDikonfirmasi ? 'active' : '' %>">
+                                        <strong>Reservasi Dikonfirmasi</strong>
+                                        <p class="mb-0">Reservasi Anda telah dikonfirmasi. <% if (reservasi.nomor_antrian && reservasi.jam_estimasi) { %> <br>
+                    Silakan datang pada pukul <strong><%= reservasi.jam_estimasi %> WIB</strong> dengan nomor antrean <strong><%= reservasi.nomor_antrian %></strong>.
+                  <% } else { %>
+                    Silakan datang sesuai jadwal.
+                  <% } %></p>
+                                    </li>
+                                    <li class="timeline-item">
+                                        <strong>Pemeriksaan Selesai</strong>
+                                        <p class="text-muted mb-0">Proses pemeriksaan telah selesai. Terima kasih atas kunjungan Anda.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <hr class="my-5" style="border: none; height: 2px; background: linear-gradient(90deg, transparent, #00A86B, transparent); margin: 4rem 0;">
+
+    <div class="text-center mb-5">
+        <h2 class="fw-bold mb-3">Menu Dashboard</h2>
+        <p class="text-muted">Akses cepat ke fitur-fitur utama</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="dashboard-card profile-card">
+                <div class="dashboard-card-body">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h5 class="dashboard-title">Profil Anda</h5>
+                    <p class="dashboard-text">Lihat dan perbarui informasi pribadi Anda</p>
+                    <a href="/profile" class="dashboard-btn">
+                        <span>Lihat Profil</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="dashboard-card medical-card">
+                <div class="dashboard-card-body">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <h5 class="dashboard-title">Riwayat Pemeriksaan</h5>
+                    <p class="dashboard-text">Akses semua catatan medis dan riwayat kunjungan Anda</p>
+                    <a href="/profile/riwayat-pemeriksaan" class="dashboard-btn">
+                        <span>Lihat Riwayat</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="dashboard-card contact-card">
+                <div class="dashboard-card-body">
+                    <div class="dashboard-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <h5 class="dashboard-title">Kontak Kami</h5>
+                    <p class="dashboard-text">Hubungi kami langsung melalui WhatsApp untuk bantuan</p>
+                    <a href="https://wa.me/6281234567890?text=Halo%20Klinik%20AL-Furqon,%20saya%20ingin%20bertanya" target="_blank" class="dashboard-btn contact-btn">
+                        <span>Chat WhatsApp</span>
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modern Dashboard Menu Cards */
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 2rem;
+    height: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 1;
+}
+
+.profile-card::before {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.medical-card::before {
+    background: linear-gradient(135deg, #00A86B 0%, #007A50 100%);
+}
+
+.contact-card::before {
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-card:hover::before {
+    opacity: 1;
+}
+
+.dashboard-card:hover .dashboard-card-body {
+    z-index: 2;
+    position: relative;
+}
+
+.dashboard-card:hover .dashboard-title {
+    color: white !important;
+}
+
+.dashboard-card:hover .dashboard-text {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dashboard-card:hover .dashboard-icon {
+    color: white;
+    transform: scale(1.1);
+}
+
+.dashboard-card:hover .dashboard-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.dashboard-card:hover .dashboard-btn span {
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.dashboard-card-body {
+    text-align: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    transition: all 0.4s ease;
+}
+
+.dashboard-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.4s ease;
+}
+
+.profile-card .dashboard-icon {
+    color: #667eea;
+}
+
+.medical-card .dashboard-icon {
+    color: #00A86B;
+}
+
+.contact-card .dashboard-icon {
+    color: #25d366;
+}
+
+.dashboard-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    transition: color 0.4s ease;
+}
+
+.dashboard-text {
+    color: #6c757d;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    flex-grow: 1;
+    transition: color 0.4s ease;
+}
+
+.dashboard-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    background: transparent;
+    border: 2px solid #e9ecef;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.4s ease;
+    color: #495057;
+}
+
+.profile-card .dashboard-btn {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.medical-card .dashboard-btn {
+    border-color: #00A86B;
+    color: #00A86B;
+}
+
+.contact-card .dashboard-btn {
+    border-color: #25d366;
+    color: #25d366;
+}
+
+.dashboard-btn i {
+    transition: transform 0.3s ease;
+}
+
+.dashboard-btn:hover i {
+    transform: translateX(4px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-card {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .dashboard-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1.2rem;
+    }
+    
+    .dashboard-text {
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+}
+</style>
+
+<%- include('partials/footer') %>

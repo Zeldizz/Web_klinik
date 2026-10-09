@@ -1,0 +1,182 @@
+<%- include('../partials/header') %>
+
+<div class="container section-padding-sm">
+    <!-- Header Section -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-10">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold mb-2 text-primary">Riwayat Reservasi</h1>
+                    <p class="text-muted mb-0">Pantau status dan kelola semua reservasi Anda</p>
+                </div>
+                <div>
+                    <a href="/reservasi/baru" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>
+                        Buat Reservasi Baru
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <% if (reservations.length > 0) { %>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="accordion" id="reservasiAccordion">
+                <% reservations.forEach(function(reservasi, index) { %>
+                    <div class="accordion-item mb-4 reservation-card">
+                        <h2 class="accordion-header" id="heading<%= reservasi.id %>">
+                            <button class="accordion-button collapsed reservation-header" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= reservasi.id %>" aria-expanded="false" aria-controls="collapse<%= reservasi.id %>">
+                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                    <div class="reservation-info flex-grow-1">
+                                        <h6 class="mb-2 fw-bold text-dark">Reservasi: <%= reservasi.tanggal_formatted %></h6>
+                                        <p class="mb-1 text-muted small">Keluhan: <%= reservasi.keluhan %></p>
+                                        <small class="text-muted">Dibuat: <%= reservasi.dibuat_pada %></small>
+                                    </div>
+                                    <div class="reservation-status text-end ms-3">
+                                        <% 
+                                            let badgeClass = 'bg-secondary';
+                                            let badgeIcon = 'fas fa-clock';
+                                            if (reservasi.status === 'Menunggu') {
+                                                badgeClass = 'bg-warning';
+                                                badgeIcon = 'fas fa-clock';
+                                            } else if (reservasi.status === 'Dikonfirmasi') {
+                                                badgeClass = 'bg-success';
+                                                badgeIcon = 'fas fa-check-circle';
+                                            } else if (reservasi.status === 'Selesai') {
+                                                badgeClass = 'bg-primary';
+                                                badgeIcon = 'fas fa-check-double';
+                                            } else if (reservasi.status === 'Dibatalkan' || reservasi.status === 'Ditolak') {
+                                                badgeClass = 'bg-danger';
+                                                badgeIcon = 'fas fa-times-circle';
+                                            }
+                                        %>
+                                        <span class="badge <%= badgeClass %> rounded-pill mb-2">
+                                            <i class="<%= badgeIcon %> me-1"></i>
+                                            <%= reservasi.status %>
+                                        </span>
+                                        <% if (reservasi.status === 'Dikonfirmasi' && reservasi.nomor_antrian && reservasi.jam_estimasi) { %>
+                                            <div class="reservation-queue-info">
+                                                <small class="text-muted d-block">Antrean: <strong>#<%= reservasi.nomor_antrian %></strong></small>
+                                                <small class="text-muted d-block">Pukul: <strong><%= reservasi.jam_estimasi %> WIB</strong></small>
+                                            </div>
+                                        <% } %>
+                                        <% if (reservasi.status === 'Menunggu') { %>
+                                            <div class="reservation-actions mt-2">
+                                                <form action="/reservasi/batal/<%= reservasi.id %>" method="POST" onsubmit="return confirm('Anda yakin ingin membatalkan reservasi ini?');" class="m-0">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                        <i class="fas fa-times me-1"></i>
+                                                        Batalkan
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse<%= reservasi.id %>" class="accordion-collapse collapse" aria-labelledby="heading<%= reservasi.id %>" data-bs-parent="#reservasiAccordion">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="fw-bold mb-3">Timeline Status</h6>
+                                        <ul class="timeline">
+                                            <% 
+                                                const statuses = ['Menunggu', 'Dikonfirmasi', 'Selesai'];
+                                                const isCancelledOrRejected = ['Dibatalkan', 'Ditolak'].includes(reservasi.status);
+                                                let currentStatusIndex = statuses.indexOf(reservasi.status);
+                                            %>
+                                            <% if (isCancelledOrRejected) { %>
+                                                <li class="timeline-item active" style="--active-color: #dc3545;">
+                                                    <strong>Reservasi <%= reservasi.status %></strong>
+                                                    <p class="text-muted mb-0">Reservasi Anda telah <%= reservasi.status.toLowerCase() %>.</p>
+                                                </li>
+                                            <% } else { %>
+                                                <li class="timeline-item <%= currentStatusIndex >= 0 ? 'active' : '' %>">
+                                                    <strong>Reservasi Dibuat</strong>
+                                                    <p class="text-muted mb-0">Anda telah berhasil membuat reservasi dan sedang menunggu konfirmasi.</p>
+                                                </li>
+                                                <li class="timeline-item <%= currentStatusIndex >= 1 ? 'active' : '' %>">
+                                                    <strong>Reservasi Dikonfirmasi</strong>
+                                                    <p class="text-muted mb-0">Reservasi Anda telah dikonfirmasi. <% if (reservasi.nomor_antrian && reservasi.jam_estimasi) { %> <br>
+                                                        Silakan datang pada pukul <strong><%= reservasi.jam_estimasi %> WIB</strong> dengan nomor antrean <strong><%= reservasi.nomor_antrian %></strong>.
+                                                    <% } else { %>
+                                                        Silakan datang sesuai jadwal.
+                                                    <% } %></p>
+                                                </li>
+                                                <li class="timeline-item <%= currentStatusIndex >= 2 ? 'active' : '' %>">
+                                                    <strong>Pemeriksaan Selesai</strong>
+                                                    <p class="text-muted mb-0">Proses pemeriksaan telah selesai.
+                                                        <% if (reservasi.status === 'Selesai' && reservasi.rekam_medis_id) { %>
+                                                            <br><a href="/rekam-medis/<%= reservasi.rekam_medis_id %>" class="btn btn-outline-primary btn-sm mt-2">
+                                                                <i class="fas fa-file-medical me-1"></i>
+                                                                Lihat Rekam Medis
+                                                            </a>
+                                                        <% } %>
+                                                    </p>
+                                                </li>
+                                            <% } %>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="fw-bold mb-3">Detail Reservasi</h6>
+                                        <div class="card bg-light">
+                                            <div class="card-body p-3">
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Tanggal Reservasi:</small>
+                                                    <div class="fw-semibold"><%= reservasi.tanggal_formatted %></div>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Keluhan:</small>
+                                                    <div class="fw-semibold"><%= reservasi.keluhan %></div>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Dibuat pada:</small>
+                                                    <div class="fw-semibold"><%= reservasi.dibuat_pada %></div>
+                                                </div>
+                                                <% if (reservasi.nomor_antrian && reservasi.jam_estimasi) { %>
+                                                    <hr class="my-2">
+                                                    <div class="mb-2">
+                                                        <small class="text-muted">Nomor Antrean:</small>
+                                                        <div class="fw-bold text-primary">#<%= reservasi.nomor_antrian %></div>
+                                                    </div>
+                                                    <div class="mb-0">
+                                                        <small class="text-muted">Jam Kedatangan:</small>
+                                                        <div class="fw-bold text-primary"><%= reservasi.jam_estimasi %> WIB</div>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card card-modern text-center">
+                <div class="card-body py-5">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 rounded-circle" style="width: 80px; height: 80px;">
+                            <i class="fas fa-history text-info" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold mb-3">Belum Ada Riwayat Reservasi</h5>
+                    <p class="text-muted mb-4">Anda belum memiliki riwayat reservasi. Mulai jaga kesehatan Anda dengan membuat reservasi pertama.</p>
+                    <a href="/reservasi/baru" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Buat Reservasi Pertama
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>
